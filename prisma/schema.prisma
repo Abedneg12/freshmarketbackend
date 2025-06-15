@@ -1,0 +1,297 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum UserRole {
+  USER
+  STORE_ADMIN
+  SUPER_ADMIN
+}
+
+enum OrderStatus {
+  WAITING_FOR_PAYMENT
+  WAITING_CONFIRMATION
+  PROCESSED
+  SHIPPED
+  CONFIRMED
+  CANCELED
+}
+
+enum ReferralRewardType {
+  VOUCHER
+  POINT
+  DISCOUNT
+}
+
+enum DiscountType {
+  PERCENTAGE
+  NOMINAL
+  BUY1GET1
+}
+
+enum VoucherType {
+  PRODUCT
+  CART
+  SHIPPING
+}
+
+enum VoucherUseStatus {
+  USED
+  EXPIRED
+  CANCELED
+}
+
+model User {
+  id                   Int                    @id @default(autoincrement())
+  fullName             String
+  email                String                 @unique
+  password             String?
+  role                 UserRole               @default(USER)
+  isVerified           Boolean                @default(false)
+  provider             String?
+  providerId           String?
+  profilePicture       String?
+  referralCode         String?                @unique
+  referredById         Int?
+  referredBy           User?                  @relation("UserReferrer", fields: [referredById], references: [id])
+  referredUsers        User[]                 @relation("UserReferrer")
+  referralLogs         ReferralLog[]          @relation("ReferrerLogs")
+  wasReferredLogs      ReferralLog[]          @relation("ReferredLogs")
+  addresses            Address[]
+  userVouchers         UserVoucher[]
+  voucherUsageLogs     VoucherUsageLog[]
+  orders               Order[]
+  carts                Cart[]
+  orderStatusLogs      OrderStatusLog[]       @relation("ChangedBy")
+  StoreAdminAssignment StoreAdminAssignment[]
+}
+
+model Store {
+  id        Int                    @id @default(autoincrement())
+  name      String
+  address   String
+  latitude  Float
+  longitude Float
+  createdAt DateTime               @default(now())
+  admins    StoreAdminAssignment[]
+  products  Stock[]
+  orders    Order[]
+  discounts Discount[]
+  journals  InventoryJournal[]
+  carts     Cart[]
+}
+
+model StoreAdminAssignment {
+  id      Int   @id @default(autoincrement())
+  user    User  @relation(fields: [userId], references: [id])
+  userId  Int
+  store   Store @relation(fields: [storeId], references: [id])
+  storeId Int
+}
+
+model ProductCategory {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  products Product[]
+}
+
+model Product {
+  id               Int                @id @default(autoincrement())
+  name             String
+  description      String
+  basePrice        Int
+  category         ProductCategory    @relation(fields: [categoryId], references: [id])
+  categoryId       Int
+  createdAt        DateTime           @default(now())
+  images           ProductImage[]
+  stocks           Stock[]
+  discounts        Discount[]
+  cartItems        CartItem[]
+  orderItems       OrderItem[]
+  InventoryJournal InventoryJournal[]
+  Voucher          Voucher[]
+}
+
+model ProductImage {
+  id        Int     @id @default(autoincrement())
+  product   Product @relation(fields: [productId], references: [id])
+  productId Int
+  imageUrl  String
+}
+
+model Stock {
+  id        Int     @id @default(autoincrement())
+  store     Store   @relation(fields: [storeId], references: [id])
+  storeId   Int
+  product   Product @relation(fields: [productId], references: [id])
+  productId Int
+  quantity  Int
+}
+
+model InventoryJournal {
+  id        Int      @id @default(autoincrement())
+  product   Product  @relation(fields: [productId], references: [id])
+  productId Int
+  store     Store    @relation(fields: [storeId], references: [id])
+  storeId   Int
+  type      String // "IN" or "OUT"
+  quantity  Int
+  note      String?
+  createdAt DateTime @default(now())
+}
+
+model Discount {
+  id          Int          @id @default(autoincrement())
+  store       Store        @relation(fields: [storeId], references: [id])
+  storeId     Int
+  product     Product?     @relation(fields: [productId], references: [id])
+  productId   Int?
+  type        DiscountType
+  minPurchase Int?
+  maxDiscount Int?
+  value       Int
+  startDate   DateTime
+  endDate     DateTime
+}
+
+model Voucher {
+  id                  Int               @id @default(autoincrement())
+  code                String            @unique
+  type                VoucherType
+  value               Int
+  maxDiscount         Int?
+  applicableProduct   Product?          @relation(fields: [applicableProductId], references: [id])
+  applicableProductId Int?
+  minSpending         Int?
+  startDate           DateTime
+  endDate             DateTime
+  usageLimit          Int?
+  isActive            Boolean           @default(true)
+  userVouchers        UserVoucher[]
+  usageLogs           VoucherUsageLog[]
+  orders              Order[]
+}
+
+model UserVoucher {
+  id        Int     @id @default(autoincrement())
+  user      User    @relation(fields: [userId], references: [id])
+  userId    Int
+  voucher   Voucher @relation(fields: [voucherId], references: [id])
+  voucherId Int
+  isUsed    Boolean @default(false)
+}
+
+model VoucherUsageLog {
+  id        Int              @id @default(autoincrement())
+  user      User             @relation(fields: [userId], references: [id])
+  userId    Int
+  voucher   Voucher          @relation(fields: [voucherId], references: [id])
+  voucherId Int
+  order     Order?           @relation(fields: [orderId], references: [id])
+  orderId   Int?
+  status    VoucherUseStatus
+  usedAt    DateTime         @default(now())
+}
+
+model Address {
+  id          Int     @id @default(autoincrement())
+  user        User    @relation(fields: [userId], references: [id])
+  userId      Int
+  label       String
+  recipient   String
+  phone       String
+  addressLine String
+  city        String
+  province    String
+  postalCode  String
+  latitude    Float
+  longitude   Float
+  isMain      Boolean @default(false)
+  Order       Order[]
+}
+
+model Cart {
+  id      Int        @id @default(autoincrement())
+  user    User       @relation(fields: [userId], references: [id])
+  userId  Int
+  store   Store      @relation(fields: [storeId], references: [id])
+  storeId Int
+  items   CartItem[]
+}
+
+model CartItem {
+  id        Int     @id @default(autoincrement())
+  cart      Cart    @relation(fields: [cartId], references: [id])
+  cartId    Int
+  product   Product @relation(fields: [productId], references: [id])
+  productId Int
+  quantity  Int
+}
+
+model Order {
+  id            Int               @id @default(autoincrement())
+  user          User              @relation(fields: [userId], references: [id])
+  userId        Int
+  store         Store             @relation(fields: [storeId], references: [id])
+  storeId       Int
+  address       Address           @relation(fields: [addressId], references: [id])
+  addressId     Int
+  totalPrice    Int
+  shippingCost  Int
+  voucher       Voucher?          @relation(fields: [voucherId], references: [id])
+  voucherId     Int?
+  paymentMethod String
+  status        OrderStatus
+  createdAt     DateTime          @default(now())
+  items         OrderItem[]
+  paymentProof  PaymentProof?
+  statusLogs    OrderStatusLog[]
+  voucherLog    VoucherUsageLog[]
+}
+
+model OrderItem {
+  id        Int     @id @default(autoincrement())
+  order     Order   @relation(fields: [orderId], references: [id])
+  orderId   Int
+  product   Product @relation(fields: [productId], references: [id])
+  productId Int
+  quantity  Int
+  price     Int
+}
+
+model PaymentProof {
+  id         Int      @id @default(autoincrement())
+  order      Order    @relation(fields: [orderId], references: [id])
+  orderId    Int      @unique
+  imageUrl   String
+  uploadedAt DateTime @default(now())
+}
+
+model OrderStatusLog {
+  id             Int         @id @default(autoincrement())
+  order          Order       @relation(fields: [orderId], references: [id])
+  orderId        Int
+  previousStatus OrderStatus
+  newStatus      OrderStatus
+  changedBy      User?       @relation("ChangedBy", fields: [changedById], references: [id])
+  changedById    Int?
+  note           String?
+  changedAt      DateTime    @default(now())
+}
+
+model ReferralLog {
+  id             Int                @id @default(autoincrement())
+  referredUser   User               @relation("ReferredLogs", fields: [referredUserId], references: [id])
+  referredUserId Int
+  referrerUser   User               @relation("ReferrerLogs", fields: [referrerUserId], references: [id])
+  referrerUserId Int
+  rewardType     ReferralRewardType
+  rewardDetail   String
+  createdAt      DateTime           @default(now())
+}
