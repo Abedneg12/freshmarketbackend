@@ -3,6 +3,7 @@ import { FE_PORT, PORT } from "./config"
 import helmet from 'helmet';
 import cors from 'cors';
 
+import SuperAdminRouter from "./routers/super.admin.router";
 
 const port = PORT || 8000;
 const app: Application = express();
@@ -29,6 +30,7 @@ app.get(
   );
 
 
+app.use("/super-admin", SuperAdminRouter);
 
   app.listen(port, () => {
     console.log(`Server started on port ${port}`);
