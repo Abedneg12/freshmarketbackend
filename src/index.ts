@@ -2,6 +2,7 @@ import express, { Application, Request, Response, NextFunction } from "express";
 import { FE_PORT, PORT } from "./config"
 import helmet from 'helmet';
 import cors from 'cors';
+import './types/express';
 
 
 const port = PORT || 8000;
