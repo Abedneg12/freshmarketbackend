@@ -1,5 +1,6 @@
 import { error } from "console";
 import prisma from "../lib/prisma";
+import bcrypt from 'bcrypt';
 
 export const getAllUsers = async () => {
     try {
@@ -15,7 +16,7 @@ export const getAllUsers = async () => {
                 addresses: {
                     select: {
                         city: true,
-                        state: true,
+                        province: true,
                     },
                 },
             },
@@ -23,6 +24,28 @@ export const getAllUsers = async () => {
     } catch (err) {
         console.error("Error fetching users:", err);
         throw new Error("Failed to fetch users");
+    }
+}
+
+export const createStoreAdmin = async (email: string, fullName: string, password: string) => {
+    try {
+        const existingUser = await prisma.user.findUnique({
+            where: { email },
+        });
+        if (existingUser) throw new Error("User already exists");
+        const hashedPassword = await bcrypt.hash(password, 10);
+        return await prisma.user.create({
+            data: {
+                email,
+                fullName,
+                password: hashedPassword,
+                role: 'STORE_ADMIN',
+                isVerified: true,
+            },
+        });
+    } catch (err) {
+        console.error("Error creating store admin:", err);
+        throw new Error("Failed to create store admin");
     }
 }
 
@@ -72,21 +95,21 @@ export const deleteStoreAdmin = async (userId: number) => {
     }
 }
 
-export const updateStoreAdmin = async (userId: number, data: { fullname?: string; email?: string; role?: string; }) => {
+export const updateStoreAdmin = async (userId: number, storeId: number) => {
     try {
-        const user = await prisma.user.findUnique({
-            where: { id: userId },
-            select: { role: true }
-        });
-        if (!user || user.role !== 'STORE_ADMIN') {
-            throw new Error("User is not a store admin or does not exist");
-        }
-        return await prisma.user.update({
-            where: { id: userId },
-            data,
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (!user) throw new Error("User not found");
+        const store = await prisma.store.findUnique({ where: { id: storeId } });
+        if (!store) throw new Error("Store not found");
+        return await prisma.storeAdminAssignment.update({
+            where: { id: userId, storeId },
+            data: {
+                userId,
+                storeId,
+            },
         });
     } catch (err) {
-        console.error("Error updating user:", err);
-        throw new Error("Failed to update user");
+        console.error("Error updating store admin:", err);
+        throw new Error("Failed to update store admin");
     }
 }

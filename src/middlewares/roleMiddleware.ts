@@ -1,16 +1,18 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import { UserRole } from '@prisma/client';
+import { AuthRequest } from './authMiddleware';
 
 export const requireRole = (roles: UserRole[]) => {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: AuthRequest, res: Response, next: NextFunction): void => {
     if (!req.user) {
-      return res.status(401).json({ message: 'Unauthorized - user not authenticated' });
+      res.status(401).json({ message: 'Unauthorized - user not authenticated' });
+      return;
     }
 
     if (!roles.includes(req.user.role as UserRole)) {
-      return res.status(403).json({ message: 'Forbidden - insufficient permissions' });
+      res.status(403).json({ message: 'Forbidden - insufficient permissions' });
+      return;
     }
-
     next();
   };
 };
