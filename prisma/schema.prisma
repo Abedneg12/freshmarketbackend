@@ -51,7 +51,7 @@ model User {
   id                   Int                    @id @default(autoincrement())
   fullName             String
   email                String                 @unique
-  password             String?
+  password             String
   role                 UserRole               @default(USER)
   isVerified           Boolean                @default(false)
   provider             String?
