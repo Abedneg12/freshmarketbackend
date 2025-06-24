@@ -5,6 +5,7 @@ import cors from 'cors';
 import './types/express';
 
 import SuperAdminRouter from "./routers/super.admin.router";
+import DiscountRouter from "./routers/discount.router";
 
 const port = PORT || 8000;
 const app: Application = express();
@@ -32,6 +33,7 @@ app.get(
 
 
 app.use("/super-admin", SuperAdminRouter);
+app.use("/discount", DiscountRouter);
 
   app.listen(port, () => {
     console.log(`Server started on port ${port}`);
