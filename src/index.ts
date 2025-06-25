@@ -2,10 +2,14 @@ import express, { Application, Request, Response, NextFunction } from "express";
 import { FE_PORT, PORT } from "./config"
 import helmet from 'helmet';
 import cors from 'cors';
-import './types/express';
+import './interfaces/IUserPayload';
+
+import CartRouters from './routers/cart.router';
+import OrderRouters from './routers/order.router';
 
 
-const port = PORT || 8000;
+
+const port = PORT || 5000;
 const app: Application = express();
 
 
@@ -28,6 +32,9 @@ app.get(
       res.status(200).send("ini API  dari FreshMart Backend");
     }
   );
+
+  app.use('/cart', CartRouters);
+  app.use('/orders', OrderRouters);
 
 
 
