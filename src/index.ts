@@ -2,7 +2,6 @@ import express, { Application, Request, Response, NextFunction } from "express";
 import { FE_PORT, PORT } from "./config"
 import helmet from 'helmet';
 import cors from 'cors';
-import './types/express';
 
 import SuperAdminRouter from "./routers/super.admin.router";
 import DiscountRouter from "./routers/discount.router";

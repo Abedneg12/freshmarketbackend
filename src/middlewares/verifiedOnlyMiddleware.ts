@@ -2,9 +2,10 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { IUserPayload } from '../interfaces/IUserPayload';
+import { AuthRequest } from './roleMiddleware';
 
 export const verifiedOnlyMiddleware = (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ): void => {
