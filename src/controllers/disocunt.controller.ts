@@ -40,7 +40,7 @@ export const createVoucherController = async (req: Request, res: Response, next:
 
 export const getAllDiscountsController = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        const discounts = await getAllDiscountsService(req.body.storeId);
+        const discounts = await getAllDiscountsService();
         res.status(200).json(discounts);
     } catch (error) {
         console.error("Error fetching discounts:", error);

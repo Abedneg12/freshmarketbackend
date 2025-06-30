@@ -64,16 +64,18 @@ export const createVoucherService = async (voucher: DiscountVoucher) => {
     });
 }
 
-export const getAllDiscountsService = async (storeId: number) => {
+export const getAllDiscountsService = async () => {
     return await prisma.discount.findMany({
-        where: {
-            storeId,
-        },
-        include: {
-            product: true, // Include product details if needed
+        select: {
+            id: true,
+            type: true,
+            value: true,
+            startDate: true,
+            endDate: true,
         },
     });
 }
+
 
 export const deleteDiscountService = async (discountId: number) => {
     const discount = await prisma.discount.findUnique({
@@ -105,4 +107,13 @@ export const updateDiscountService = async (discountId: number, data: Partial<Di
             endDate: data.endDate ? new Date(data.endDate) : discount.endDate,
         },
     });
+}
+
+export function calculateDiscount(discountStr: string, price: number): number {
+    if (discountStr.endsWith('%')) {
+        const percent = parseFloat(discountStr.slice(0, -1));
+        return Math.floor(price * (percent / 100));
+    } else {
+        return parseInt(discountStr, 10);
+    }
 }

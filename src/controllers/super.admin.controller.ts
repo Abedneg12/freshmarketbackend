@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { getAllUsers, createStoreAdmin, assignStoreAdmin, deleteStoreAdmin, updateStoreAdmin } from "../services/super.admin.service";
+import { getAllUsers, createStoreAdmin, assignStoreAdmin, deleteStoreAdmin, updateStoreAdmin, updateStoreAdminAssigment } from "../services/super.admin.service";
 
 export const getAllUsersController = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -57,6 +57,18 @@ export const updateStoreAdminController = async (req: Request, res: Response, ne
     } catch (error) {
         console.error("Error updating store admin:", error);
         res.status(500).json({ message: "Failed to update store admin" });
+        next(error);
+    }
+};
+
+export const updateStoreAdminAssigmentController = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const { userId, storeId } = req.body;
+    try {
+        const result = await updateStoreAdminAssigment(Number(userId), Number(storeId));
+        res.status(200).json(result);
+    } catch (error) {
+        console.error("Error updating store admin assignment:", error);
+        res.status(500).json({ message: "Failed to update store admin assignment" });
         next(error);
     }
 };

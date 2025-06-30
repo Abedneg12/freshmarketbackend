@@ -13,6 +13,17 @@ export const getAllUsers = async () => {
                 email: true,
                 fullName: true,
                 role: true,
+                isVerified: true,
+                StoreAdminAssignment: {
+                    select: {   
+                        store: {
+                            select: {
+                                id: true,
+                                name: true,
+                            },
+                        },
+                    },
+                },
                 addresses: {
                     select: {
                         city: true,
@@ -95,7 +106,7 @@ export const deleteStoreAdmin = async (userId: number) => {
     }
 }
 
-export const updateStoreAdmin = async (userId: number, storeId: number) => {
+export const updateStoreAdminAssigment = async (userId: number, storeId: number) => {
     try {
         const user = await prisma.user.findUnique({ where: { id: userId } });
         if (!user) throw new Error("User not found");
@@ -107,6 +118,26 @@ export const updateStoreAdmin = async (userId: number, storeId: number) => {
                 userId,
                 storeId,
             },
+        });
+    } catch (err) {
+        console.error("Error updating store admin:", err);
+        throw new Error("Failed to update store admin");
+    }
+}
+
+export const updateStoreAdmin = async (userId: number, data: Partial<{ email: string; fullName: string; password: string }>) => {
+    try {
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (!user) throw new Error("User not found");
+        const updatedData: any = {};
+        if (data.email) updatedData.email = data.email;
+        if (data.fullName) updatedData.fullName = data.fullName;
+        if (data.password) {
+            updatedData.password = await bcrypt.hash(data.password, 10);
+        }
+        return await prisma.user.update({
+            where: { id: userId },
+            data: updatedData,
         });
     } catch (err) {
         console.error("Error updating store admin:", err);
