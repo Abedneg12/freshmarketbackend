@@ -1,0 +1,140 @@
+import prisma from "../lib/prisma";
+import { IUserPayload } from "../interfaces/IUserPayload";
+import bcrypt from "bcrypt";
+import { cloudinaryUpload, cloudinaryRemove } from "../utils/cloudinary";
+import { sendUpdateEmailVerification } from "../utils/updateEmailVerification";
+import jwt from "jsonwebtoken";
+import { JWT_SECRET } from "../config";
+
+const SECRET_KEY = JWT_SECRET || "supersecret";
+
+export async function getProfileService(userPayLoad: IUserPayload) {
+  const userProfile = await prisma.user.findUnique({
+    where: { id: userPayLoad.id },
+    select: {
+      id: true,
+      fullName: true,
+      email: true,
+      profilePicture: true,
+      referralCode: true,
+    },
+  });
+
+  if (!userProfile) {
+    throw new Error("User tidak ditemukan");
+  }
+
+  return userProfile;
+}
+
+export async function updateProfileService(
+  userId: number,
+  newfullName: string
+) {
+  const updatedUser = await prisma.user.update({
+    where: { id: userId },
+    data: { fullName: newfullName },
+    select: {
+      id: true,
+      fullName: true,
+      email: true,
+    },
+  });
+
+  return updatedUser;
+}
+
+export async function changePasswordService(
+  userId: number,
+  oldPass: string,
+  newPass: string
+) {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+
+  if (!user) {
+    throw new Error("User tidak ditemukan");
+  }
+
+  if (!user.password) {
+    throw new Error("Akun ini tidak memiliki password, tidak dapat diubah");
+  }
+
+  const isMatch = await bcrypt.compare(oldPass, user.password);
+  if (!isMatch) {
+    throw new Error("Password lama salah");
+  }
+
+  const hashedNewPassword = await bcrypt.hash(newPass, 10);
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { password: hashedNewPassword },
+  });
+}
+
+export async function updateProfilePictureService(
+  userId: number,
+  file: Express.Multer.File
+) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { profilePicture: true },
+  });
+  if (!user) throw new Error("User tidak ditemukan.");
+
+  if (user.profilePicture) {
+    await cloudinaryRemove(user.profilePicture);
+  }
+
+  const uploadResult = await cloudinaryUpload(file);
+  return await prisma.user.update({
+    where: { id: userId },
+    data: { profilePicture: uploadResult.secure_url },
+    select: { id: true, profilePicture: true },
+  });
+}
+
+export async function requestEmailUpdateService(
+  userId: number,
+  newEmail: string
+) {
+  const emailExist = await prisma.user.findUnique({
+    where: { email: newEmail },
+  });
+  if (emailExist) {
+    throw new Error("Email ini sudah digunakan oleh akun lain.");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { fullName: true },
+  });
+
+  if (!user) {
+    throw new Error("User tidak ditemukan.");
+  }
+
+  const token = jwt.sign({ userId, newEmail }, SECRET_KEY, { expiresIn: "1h" });
+  const confirmationLink = `http://localhost:3000/user/confirm-email-update?token=${token}`;
+  await sendUpdateEmailVerification(newEmail, user.fullName, confirmationLink);
+
+  return {
+    message: `Sebuah link konfirmasi telah dikirim ke ${newEmail}. Silakan periksa email Anda untuk menyelesaikan perubahan.`,
+  };
+}
+
+export async function confirmEmailUpdateService(token: string) {
+  const decoded = jwt.verify(token, SECRET_KEY) as {
+    userId: number;
+    newEmail: string;
+  };
+
+  await prisma.user.update({
+    where: { id: decoded.userId },
+    data: {
+      email: decoded.newEmail,
+    },
+  });
+
+  return { message: "Alamat email Anda telah diperbarui." };
+}
