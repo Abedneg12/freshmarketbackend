@@ -140,7 +140,7 @@ model InventoryJournal {
   productId Int
   store     Store    @relation(fields: [storeId], references: [id])
   storeId   Int
-  type      String // "IN" or "OUT"
+  type      String
   quantity  Int
   note      String?
   createdAt DateTime @default(now())

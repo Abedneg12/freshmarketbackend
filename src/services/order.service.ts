@@ -1,0 +1,219 @@
+// services/order.service.ts -> VERSI FINAL LENGKAP
+
+import midtransClient from 'midtrans-client';
+import { MIDTRANS_CLIENT_KEY, MIDTRANS_SERVER_KEY } from '../config';
+import prisma from '../lib/prisma';
+import { Prisma, OrderStatus } from '@prisma/client';
+import { GetUserOrdersFilter } from '../interfaces/order.interface';
+
+
+// INISIALISASI MIDTRANS CLIENT
+const snap = new midtransClient.Snap({
+  isProduction: false,
+  serverKey: MIDTRANS_SERVER_KEY,
+  clientKey: MIDTRANS_CLIENT_KEY,
+});
+
+
+// FUNGSI UTILITAS
+function getDistanceMeters(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const toRad = (v: number) => (v * Math.PI) / 180;
+  const R = 6371000;
+  const φ1 = toRad(lat1);
+  const φ2 = toRad(lat2);
+  const Δφ = toRad(lat2 - lat1);
+  const Δλ = toRad(lng2 - lng1);
+
+  const a = Math.sin(Δφ / 2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+
+// SERVICE UNTUK CHECKOUT
+export const checkout = async (
+  userId: number,
+  addressId: number,
+  paymentMethod: string,
+  voucherCode?: string,
+  cartItemIds: number[] = []
+) => {
+  // Bagian validasi dan kalkulasi awal tetap sama
+  const address = await prisma.address.findUnique({ where: { id: addressId, userId } });
+  if (!address) throw new Error('Alamat tidak ditemukan');
+
+  const stores = await prisma.store.findMany();
+  const nearbyStores = stores
+    .map((s) => ({ ...s, distance: getDistanceMeters(address.latitude, address.longitude, s.latitude, s.longitude) }))
+    .filter((s) => s.distance <= 7000)
+    .sort((a, b) => a.distance - b.distance);
+
+  if (nearbyStores.length === 0) throw new Error('Tidak ada gudang dalam jarak 7 km');
+
+  const selectedItems = await prisma.cartItem.findMany({
+    where: { id: { in: cartItemIds }, cart: { userId } },
+    include: { product: true, cart: true },
+  });
+
+  if (!selectedItems.length) throw new Error('Item keranjang tidak ditemukan');
+
+  let chosenStore: (typeof nearbyStores)[0] | null = null;
+  for (const store of nearbyStores) {
+    let hasAllStock = true;
+    for (const item of selectedItems) {
+      const stock = await prisma.stock.findFirst({ where: { storeId: store.id, productId: item.productId } });
+      if (!stock || stock.quantity < item.quantity) {
+        hasAllStock = false;
+        break;
+      }
+    }
+    if (hasAllStock) {
+      chosenStore = store;
+      break;
+    }
+  }
+
+  if (!chosenStore) throw new Error('Tidak ada gudang dengan stok mencukupi dalam radius 7 km');
+
+  let subtotal = 0;
+  for (const item of selectedItems) {
+    subtotal += item.quantity * item.product.basePrice;
+  }
+
+  const distanceKm = chosenStore.distance / 1000;
+  const shippingCost = Math.ceil(distanceKm) * 5000;
+
+  let voucherId: number | null = null;
+  let voucherDiscount = 0;
+  if (voucherCode) {
+    const voucher = await prisma.voucher.findUnique({ where: { code: voucherCode } });
+    if (voucher && voucher.isActive && subtotal >= (voucher.minSpending ?? 0) && new Date() >= voucher.startDate && new Date() <= voucher.endDate) {
+      voucherId = voucher.id;
+      voucherDiscount = Math.min(voucher.value, voucher.maxDiscount ?? voucher.value);
+    }
+  }
+
+  // Buat pesanan di database terlebih dahulu menggunakan transaksi
+  const order = await prisma.$transaction(async (tx) => {
+    const o = await tx.order.create({
+      data: {
+        userId,
+        storeId: chosenStore!.id,
+        addressId,
+        totalPrice: subtotal + shippingCost - voucherDiscount,
+        shippingCost,
+        voucherId,
+        paymentMethod,
+        status: OrderStatus.WAITING_FOR_PAYMENT,
+      },
+    });
+
+    if (voucherId) {
+        await tx.userVoucher.updateMany({ where: { userId, voucherId, isUsed: false }, data: { isUsed: true } });
+    }
+
+    for (const item of selectedItems) {
+        await tx.orderItem.create({ data: { orderId: o.id, productId: item.productId, quantity: item.quantity, price: item.product.basePrice } });
+        await tx.stock.updateMany({ where: { storeId: chosenStore!.id, productId: item.productId }, data: { quantity: { decrement: item.quantity } } });
+        await tx.inventoryJournal.create({ data: { productId: item.productId, storeId: chosenStore!.id, type: 'OUT', quantity: item.quantity, note: `Order #${o.id}` } });
+    }
+    await tx.cartItem.deleteMany({ where: { id: { in: cartItemIds } } });
+    await tx.orderStatusLog.create({ data: { orderId: o.id, previousStatus: OrderStatus.WAITING_FOR_PAYMENT, newStatus: OrderStatus.WAITING_FOR_PAYMENT, changedById: userId, note: 'Order created' } });
+    
+    return o;
+  });
+
+  // Setelah pesanan berhasil dibuat, lanjutkan ke proses pembayaran
+  if (paymentMethod === 'MIDTRANS') {
+    const parameter = {
+      transaction_details: {
+        order_id: order.id.toString(),
+        gross_amount: order.totalPrice,
+      },
+    };
+    const transaction = await snap.createTransaction(parameter);
+    return { order, midtransRedirectUrl: transaction.redirect_url };
+  }
+
+  return { order };
+};
+
+
+// SERVICE UNTUK FUNGSI LAIN
+export const getUserOrdersService = async (userId: number, filter: GetUserOrdersFilter) => {
+  const { status, orderId, startDate, endDate, page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc' } = filter;
+  const whereClause: Prisma.OrderWhereInput = { userId };
+  if (status && Object.values(OrderStatus).includes(status as OrderStatus)) whereClause.status = status as OrderStatus;
+  if (orderId) whereClause.id = orderId;
+  if (startDate || endDate) {
+    whereClause.createdAt = {};
+    if (startDate) whereClause.createdAt.gte = startDate;
+    if (endDate) whereClause.createdAt.lte = endDate;
+  }
+  const totalOrders = await prisma.order.count({ where: whereClause });
+  const orders = await prisma.order.findMany({
+    where: whereClause,
+    include: { items: { include: { product: true } }, address: true, store: true, voucher: true },
+    skip: (page - 1) * limit,
+    take: limit,
+    orderBy: { [sortBy]: sortOrder },
+  });
+  return { data: orders, pagination: { page, limit, total: totalOrders, totalPages: Math.ceil(totalOrders / limit) } };
+};
+
+export const submitPaymentProof = async (orderId: number, userId: number, imageUrl: string) => {
+  // Fungsi ini tidak berubah
+  const order = await prisma.order.findFirst({ where: { id: orderId, userId: userId } });
+  if (!order) throw new Error('Pesanan tidak ditemukan atau Anda tidak memiliki akses ke pesanan ini.');
+  if (order.status !== 'WAITING_FOR_PAYMENT') throw new Error('Hanya pesanan dengan status "Menunggu Pembayaran" yang dapat diunggah bukti bayarnya.');
+  const updatedOrder = await prisma.$transaction(async (tx) => {
+    await tx.paymentProof.create({ data: { orderId: orderId, imageUrl: imageUrl } });
+    const newOrderState = await tx.order.update({ where: { id: orderId }, data: { status: OrderStatus.WAITING_CONFIRMATION } });
+    await tx.orderStatusLog.create({ data: { orderId: orderId, previousStatus: OrderStatus.WAITING_FOR_PAYMENT, newStatus: OrderStatus.WAITING_CONFIRMATION, changedById: userId, note: 'User telah mengunggah bukti pembayaran.' } });
+    return newOrderState;
+  });
+  return updatedOrder;
+};
+
+
+// SERVICE UNTUK NOTIFIKASI MIDTRANS (BARU)
+export const handleMidtransNotification = async (notification: any) => {
+  const statusResponse = await snap.transaction.notification(notification);
+  const orderId = Number(statusResponse.order_id);
+  const transactionStatus = statusResponse.transaction_status;
+  const fraudStatus = statusResponse.fraud_status;
+
+  const order = await prisma.order.findUnique({ where: { id: orderId } });
+  if (!order) throw new Error(`Pesanan dengan ID ${orderId} tidak ditemukan.`);
+
+  if (order.status === 'CONFIRMED' || order.status === 'CANCELED' || order.status === 'PROCESSED') {
+    console.log(`Pesanan ${orderId} sudah memiliki status final, notifikasi diabaikan.`);
+    return;
+  }
+
+  let newStatus: OrderStatus | null = null;
+  const note = `Status pembayaran diperbarui oleh Midtrans: ${transactionStatus}. Status fraud: ${fraudStatus}.`;
+  
+  if (transactionStatus == 'capture' || transactionStatus == 'settlement') {
+    if (fraudStatus == 'accept') {
+      newStatus = OrderStatus.PROCESSED;
+    }
+  } else if (transactionStatus == 'cancel' || transactionStatus == 'deny' || transactionStatus == 'expire') {
+    newStatus = OrderStatus.CANCELED;
+  }
+
+  if (newStatus) {
+    await prisma.$transaction(async (tx) => {
+      await tx.order.update({ where: { id: orderId }, data: { status: newStatus! } });
+      await tx.orderStatusLog.create({
+        data: {
+          orderId: orderId,
+          previousStatus: order.status,
+          newStatus: newStatus!,
+          changedById: null,
+          note: note,
+        },
+      });
+    });
+  }
+};
