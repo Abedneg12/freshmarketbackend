@@ -157,7 +157,7 @@ model Discount {
   type        DiscountType
   minPurchase Int?
   maxDiscount Int?
-  value       Int
+  value       String
   startDate   DateTime
   endDate     DateTime
 }

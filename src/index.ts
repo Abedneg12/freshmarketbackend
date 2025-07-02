@@ -6,6 +6,11 @@ import { FE_PORT, PORT } from "./config"
 import helmet from 'helmet';
 import cors from 'cors';
 import './interfaces/IUserPayload';
+
+// import CartRouters from './routers/cart.router';
+// import OrderRouters from './routers/order.router';
+import SuperAdminRouter from "./routers/super.admin.router";
+import DiscountRouter from "./routers/discount.router";
 import CartRouters from './routers/cart.router';
 import OrderRouters from './routers/order.router';
 import authRoutes from "./routers/auth";
@@ -39,6 +44,11 @@ app.get(
     res.status(200).send("ini API  dari FreshMart Backend");
   }
 );
+
+// app.use('/cart', CartRouters);
+// app.use('/orders', OrderRouters);
+app.use("/super-admin", SuperAdminRouter);
+app.use("/discount", DiscountRouter);
 app.use('/cart', CartRouters);
 app.use('/orders', OrderRouters);
 app.use("/api/auth", authRoutes);
