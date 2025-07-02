@@ -1,5 +1,5 @@
 import prisma from "../lib/prisma";
-import { DiscountVoucher, DiscountBOGO, DiscountProduct } from "../type/discount.type";
+import { DiscountVoucher, DiscountBOGO, DiscountProduct } from "../interfaces/discount.type";
 import { DiscountType } from "@prisma/client";
 
 export const createDiscountBOGOService = async (discount: DiscountBOGO) => {
