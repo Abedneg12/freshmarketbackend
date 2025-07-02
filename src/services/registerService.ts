@@ -2,7 +2,7 @@ import prisma from "../lib/prisma";
 import jwt from "jsonwebtoken";
 import { sendVerificationEmail } from "../utils/verificationEmail";
 import { JWT_SECRET } from "../config";
-import bcrypt from "bcrypt";
+
 
 const SECRET_KEY = JWT_SECRET || "supersecret";
 

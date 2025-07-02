@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { verifySchema } from "../schema/authSchema";
+import { verifySchema } from "../validations/authSchema";
 import { verifyService } from "../services/verifyService";
 
 export async function verifyController(req: Request, res: Response) {

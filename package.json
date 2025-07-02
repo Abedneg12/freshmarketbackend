@@ -19,7 +19,6 @@
     "@types/express": "^5.0.3",
     "@types/node": "^24.0.1",
     "axios": "^1.10.0",
-    "bcrypt": "^6.0.0",
     "cloudinary": "^2.7.0",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
@@ -50,6 +49,7 @@
     "@types/passport": "^1.0.17",
     "@types/passport-facebook": "^3.0.3",
     "@types/passport-google-oauth20": "^2.0.16",
-    "@types/streamifier": "^0.1.2"
+    "@types/streamifier": "^0.1.2",
+    "bcrypt": "^6.0.0"
   }
 }

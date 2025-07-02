@@ -15,7 +15,7 @@ import {
   registerSchema,
   resetRequestSchema,
   verifySchema,
-} from "../schema/authSchema";
+} from "../validations/authSchema";
 
 const router = Router();
 

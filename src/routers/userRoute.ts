@@ -8,7 +8,7 @@ import {
   confirmEmailUpdateController,
 } from "../controllers/userController";
 import { authOnlyMiddleware } from "../middlewares/authOnlyMiddleware";
-import { uploadProfileImage } from "../utils/multer";
+import { Multer } from "../utils/multer";
 
 const router = Router();
 
@@ -18,7 +18,7 @@ router.patch("/change-password", authOnlyMiddleware, changePasswordController);
 router.patch(
   "/profile/picture",
   authOnlyMiddleware,
-  uploadProfileImage,
+  Multer("memoryStorage").single('avatar'),
   updateProfilePictureController
 );
 router.post(

@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { registerSchema } from "../schema/authSchema";
+import { registerSchema } from "../validations/authSchema";
 import {
   registerService,
   resendVerificationService,

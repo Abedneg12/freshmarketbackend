@@ -7,12 +7,9 @@ export interface IUserPayload {
   isVerified: boolean;
 }
 
+
 declare global {
   namespace Express {
-    interface Request {
-      user?: IUserPayload;
-    }
+    interface User extends IUserPayload {}
   }
 }
-
-  

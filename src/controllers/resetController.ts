@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { resetRequestSchema, resetConfirmSchema } from "../schema/authSchema";
+import { resetRequestSchema, resetConfirmSchema } from "../validations/authSchema";
 import {
   requestResetPasswordService,
   confirmResetPasswordService,
