@@ -18,9 +18,12 @@ import OAuthRoutes from "./routers/OAuth";
 import storeRoutes from "./routers/store";
 import userRoutes from "./routers/userRoute";
 import AdminOrderRouters from './routers/admin/admin.order.router';
+import CategoryRouters from "./routers/category.router";
+import ProductRouters from "./routers/product.router";
+import InventoryRouters from "./routers/inventory.router";
 
 
-const port = PORT || 5000;
+const port = PORT || 8000;
 const app: Application = express();
 
 app.use(helmet());
