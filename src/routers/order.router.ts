@@ -4,7 +4,9 @@ import express from 'express';
 import { 
     createOrderController, 
     getUserOrdersController,
-    uploadPaymentProofController // <-- 1. Import controller baru
+    uploadPaymentProofController,
+    cancelOrderByUserController,
+    confirmOrderReceivedController
 } from '../controllers/order.controller';
 import { validateBody } from '../middlewares/validationMiddleware';
 import { checkoutSchema } from '../validations/order.validation';
@@ -13,13 +15,13 @@ import { Multer } from '../utils/multer';
 
 const router = express.Router();
 
-// Middleware ini berlaku untuk semua rute di bawahnya
+
 router.use(verifiedOnlyMiddleware);
 
-// Rute untuk membuat pesanan baru (sudah ada)
+
 router.post('/', validateBody(checkoutSchema), createOrderController);
 
-// Rute untuk mengambil daftar pesanan user (sudah ada)
+
 router.get('/my', getUserOrdersController);
 
 router.post(
@@ -27,5 +29,10 @@ router.post(
   Multer("memoryStorage").single('paymentProof'),
   uploadPaymentProofController
 );
+
+router.post('/my/:orderId/cancel', cancelOrderByUserController);
+
+router.post('/my/:orderId/confirm', confirmOrderReceivedController);
+
 
 export default router;

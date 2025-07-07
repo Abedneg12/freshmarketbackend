@@ -2,7 +2,7 @@
 
 import { Request, Response } from 'express';
 // Sesuaikan path import jika struktur folder Anda berbeda
-import { getOrdersForAdmin, confirmPayment, shipOrder} from '../../services/admin/order.admin.service';
+import { getOrdersForAdmin, confirmPayment, shipOrder, cancelOrder} from '../../services/admin/order.admin.service';
 import { OrderStatus } from '@prisma/client';
 import { TPaymentDecision } from '../../interfaces/admin.interface';
 
@@ -87,22 +87,44 @@ export const confirmPaymentController = (req: Request, res: Response): void => {
 };
 
 export const shipOrderController = (req: Request, res: Response): void => {
-    // Ambil data admin dari token
+
     const adminUser = req.user;
     if (!adminUser) {
         res.status(401).json({ message: 'Unauthorized: Admin not found' });
         return;
     }
 
-    // Ambil orderId dari parameter URL
+
     const orderId = Number(req.params.orderId);
 
-    // Panggil service untuk menjalankan logika utama
+ 
     shipOrder(adminUser, orderId)
         .then((updatedOrder) => {
             res.status(200).json({
                 message: `Pesanan #${orderId} telah berhasil di-update menjadi ${updatedOrder.status}.`,
                 data: updatedOrder,
+            });
+        })
+        .catch((error: any) => {
+            res.status(400).json({ message: error.message });
+        });
+};
+
+
+export const cancelOrderController = (req: Request, res: Response): void => {
+
+    const adminUser = req.user;
+    if (!adminUser) {
+        res.status(401).json({ message: 'Unauthorized: Admin not found' });
+        return;
+    }
+
+    const orderId = Number(req.params.orderId);
+    cancelOrder(adminUser, orderId)
+        .then((canceledOrder) => {
+            res.status(200).json({
+                message: `Pesanan #${orderId} telah berhasil dibatalkan.`,
+                data: canceledOrder,
             });
         })
         .catch((error: any) => {

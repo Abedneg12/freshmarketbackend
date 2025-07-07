@@ -1,9 +1,9 @@
 import { Router } from 'express';
-// --- 1. Impor controller baru ---
 import { 
   getOrdersController, 
   confirmPaymentController,
-  shipOrderController // <-- Impor fungsi baru
+  shipOrderController,
+  cancelOrderController
 } from '../../controllers/admin/admin.order.controller';
 import { authOnlyMiddleware } from '../../middlewares/authOnlyMiddleware';
 import { requireRole } from '../../middlewares/roleMiddleware';
@@ -27,5 +27,7 @@ router.post(
 
 // Endpoint untuk mengirim pesanan
 router.post('/:orderId/ship', shipOrderController);
+
+router.post('/:orderId/cancel', cancelOrderController);
 
 export default router;
