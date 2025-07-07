@@ -1,5 +1,3 @@
-// src/index.ts -> VERSI FINAL
-
 import express, { Application, Request, Response, NextFunction } from "express";
 import passport from "./utils/passport";
 import { FE_PORT, PORT } from "./config"
@@ -7,8 +5,9 @@ import helmet from 'helmet';
 import cors from 'cors';
 import './interfaces/IUserPayload';
 
-// import CartRouters from './routers/cart.router';
-// import OrderRouters from './routers/order.router';
+
+import { initScheduledJobs } from './cron/scheduler';
+
 import SuperAdminRouter from "./routers/super.admin.router";
 import DiscountRouter from "./routers/discount.router";
 import CartRouters from './routers/cart.router';
@@ -17,6 +16,7 @@ import authRoutes from "./routers/auth";
 import OAuthRoutes from "./routers/OAuth";
 import storeRoutes from "./routers/store";
 import userRoutes from "./routers/userRoute";
+import AdminOrderRouters from './routers/admin/admin.order.router';
 
 
 const port = PORT || 5000;
@@ -45,9 +45,9 @@ app.get(
   }
 );
 
-// app.use('/cart', CartRouters);
-// app.use('/orders', OrderRouters);
+
 app.use("/super-admin", SuperAdminRouter);
+app.use('/api/admin/orders', AdminOrderRouters);
 app.use("/discount", DiscountRouter);
 app.use('/cart', CartRouters);
 app.use('/orders', OrderRouters);
@@ -58,4 +58,6 @@ app.use("/api/user", userRoutes);
 
 app.listen(port, () => {
   console.log(`Server started on port ${port}`);
+  initScheduledJobs();
 });
+
