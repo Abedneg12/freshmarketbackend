@@ -3,34 +3,38 @@ import { createProduct, deleteProduct, getAllProducts, getProductById, updatePro
 import { ProductDTO } from "../type/product.type";
 
 export const getAllProductsController = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-        const products = await getAllProducts();
-        res.status(200).json(products);
-    } catch (error) {
-        console.error("Error fetching products:", error);
-        res.status(500).json({ message: "Failed to fetch products" });
-        next(error);
-    }
+  try {
+    const products = await getAllProducts();
+    res.status(200).json(products);
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    res.status(500).json({ message: "Failed to fetch products" });
+    next(error);
+  }
 };
 
 export const getProductByIdController = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const productId = parseInt(req.params.productId);
-    try {
-        const product = await getProductById(productId);
-        if (!product) {
-            res.status(404).json({ message: "Product not found" });
-            return;
-        }
-        res.status(200).json(product);
-    } catch (error) {
-        console.error("Error fetching product:", error);
-        res.status(500).json({ message: "Failed to fetch product" });
-        next(error);
+  const productId = parseInt(req.params.productId);
+  try {
+    const product = await getProductById(productId);
+    if (!product) {
+      res.status(404).json({ message: "Product not found" });
+      return;
     }
+    res.status(200).json(product);
+  } catch (error) {
+    console.error("Error fetching product:", error);
+    res.status(500).json({ message: "Failed to fetch product" });
+    next(error);
+  }
 };
 
 export const createProductController = async (req: Request, res: Response, next: NextFunction) => {
-  const productData = req.body;
+  const productData = {
+    ...req.body,
+    categoryId: Number(req.body.categoryId),
+    basePrice: parseFloat(req.body.basePrice),
+  };
   const files = req.files as Express.Multer.File[]; // Multer will add this
   try {
     const newProduct = await createProduct(productData, files);
@@ -43,7 +47,11 @@ export const createProductController = async (req: Request, res: Response, next:
 
 export const updateProductController = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const productId = parseInt(req.params.productId);
-  const productData: Partial<ProductDTO> = req.body;
+  const productData: Partial<ProductDTO> = {
+    ...req.body,
+    categoryId: Number(req.body.categoryId),
+    basePrice: parseFloat(req.body.basePrice),
+  };
   const files = req.files as Express.Multer.File[];
   try {
     const updatedProduct = await updateProduct(productId, productData, files);
@@ -59,17 +67,17 @@ export const updateProductController = async (req: Request, res: Response, next:
 };
 
 export const deleteProductController = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const productId = parseInt(req.params.productId);
-    try {
-        const deletedProduct = await deleteProduct(productId);
-        if (!deletedProduct) {
-            res.status(404).json({ message: "Product not found" });
-            return;
-        }
-        res.status(200).json({ message: "Product deleted successfully" });
-    } catch (error) {
-        console.error("Error deleting product:", error);
-        res.status(500).json({ message: "Failed to delete product" });
-        next(error);
+  const productId = parseInt(req.params.productId);
+  try {
+    const deletedProduct = await deleteProduct(productId);
+    if (!deletedProduct) {
+      res.status(404).json({ message: "Product not found" });
+      return;
     }
+    res.status(200).json({ message: "Product deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting product:", error);
+    res.status(500).json({ message: "Failed to delete product" });
+    next(error);
+  }
 };

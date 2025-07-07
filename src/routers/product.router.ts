@@ -5,10 +5,10 @@ import express from 'express';
 const router = express.Router();
 const upload = Multer("diskStorage", "product-", "products");
 
-router.post("/products", upload.array("images"), createProductController);
-router.put("/products/:productId", upload.array("images"), updateProductController);
-router.delete("/products/:productId", deleteProductController);
-router.get("/products", getAllProductsController);
-router.get("/products/:productId", getProductByIdController);
+router.post("/", upload.array("images"), createProductController);
+router.put("/:productId", upload.array("images"), updateProductController);
+router.delete("/:productId", deleteProductController);
+router.get("/", getAllProductsController);
+router.get("/:productId", getProductByIdController);
 
 export default router;

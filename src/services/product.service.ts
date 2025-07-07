@@ -6,7 +6,12 @@ export const getAllProducts = async () => {
       include: {
         category: true,
         images: true,
-        stocks: true,
+        // stocks include the store information
+        stocks: {
+          include: {
+            store: true,
+          },
+        },
         discounts: true,
         cartItems: true,
         orderItems: true,
@@ -51,6 +56,13 @@ export const createProduct = async (
   files?: Express.Multer.File[]
 ) => {
   try {
+    const existing = await prisma.product.findFirst({
+      where: { name: data.name }
+    });
+    if (existing) {
+      throw new Error("Product name already exists");
+    }
+
     return await prisma.product.create({
       data: {
         ...data,
