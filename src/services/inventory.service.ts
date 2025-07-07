@@ -30,16 +30,15 @@ export const updateProductStock = async (
         }
 
         // Check if the product and store exist
-        console.log(productId, storeId);
         const product = await prisma.product.findUnique({ where: { id: productId } });
-        //const store = await prisma.store.findUnique({ where: { id: storeId } });
+        const store = await prisma.store.findUnique({ where: { id: storeId } });
 
         if (!product) {
             throw new Error(`Product with ID ${productId} not found.`);
         }
-        // if (!store) {
-        //     throw new Error(`Store with ID ${storeId} not found.`);
-        // }
+        if (!store) {
+            throw new Error(`Store with ID ${storeId} not found.`);
+        }
 
         return await prisma.$transaction(async (prisma) => {
             // Create an inventory journal entry
