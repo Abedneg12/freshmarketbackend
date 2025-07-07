@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { DiscountBOGO, DiscountProduct, DiscountVoucher } from "../type/discount.type";
+import { DiscountBOGO, DiscountProduct, DiscountVoucher } from "../interfaces/discount.type";
 import { createDiscountBOGOService, createDiscountProductService, createVoucherService, deleteDiscountService, getAllDiscountsService, updateDiscountService } from "../services/discount.service";
 
 export const createDiscountBOGOController = async (req: Request, res: Response, next: NextFunction): Promise<void> => {

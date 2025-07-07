@@ -2,8 +2,8 @@
 
 import { Request, Response, NextFunction } from "express";
 import { createProduct, deleteProduct, getAllProducts, getProductById, updateProduct } from "../services/product.service";
-import { updateProductStock } from "../services/inventory.service"; // Import the inventory service
-import { ProductDTO } from "../type/product.type";
+import { ProductDTO } from "../interfaces/product.type";
+import { updateProductStock } from "../services/inventory.service";
 
 export const getAllProductsController = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
