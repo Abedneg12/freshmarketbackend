@@ -36,7 +36,6 @@ export async function getRecommendedStores(lat: number, lng: number) {
       results.push({
         id: store.id,
         name: store.name,
-        imageUrl: store.imageUrl,
         address: store.address,
         distanceKm: parseFloat(dist.toFixed(2)),
         products,
