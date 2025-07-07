@@ -4,6 +4,7 @@ import { FE_PORT, PORT } from "./config"
 import helmet from 'helmet';
 import cors from 'cors';
 import './interfaces/IUserPayload';
+import path from "path";
 
 
 import { initScheduledJobs } from './cron/scheduler';
@@ -23,10 +24,17 @@ const port = PORT || 5000;
 const app: Application = express();
 
 app.use(helmet());
-
+app.use((req, res, next) => {
+  if (req.path.startsWith('/products/') && req.method === 'GET') {
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  } else {
+    res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+  }
+  next();
+});
 app.use(
   cors({
-    origin: FE_PORT,
+    origin: FE_PORT || 'http://localhost:3000',
     credentials: true,
   })
 );
@@ -55,6 +63,9 @@ app.use("/api/auth", authRoutes);
 app.use("/api/oauth", OAuthRoutes);
 app.use("/stores", storeRoutes);
 app.use("/api/user", userRoutes);
+app.use("/category", CategoryRouters);
+app.use("/product", ProductRouters);
+app.use("/inventory", InventoryRouters);
 
 app.listen(port, () => {
   console.log(`Server started on port ${port}`);
