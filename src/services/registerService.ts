@@ -3,7 +3,6 @@ import jwt from "jsonwebtoken";
 import { sendVerificationEmail } from "../utils/verificationEmail";
 import { JWT_SECRET } from "../config";
 
-
 const SECRET_KEY = JWT_SECRET || "supersecret";
 
 export async function registerService(data: {
@@ -78,7 +77,11 @@ export async function registerService(data: {
     }
   }
 
-  const token = jwt.sign({ userId: user.id }, SECRET_KEY, { expiresIn: "1h" });
+  const token = jwt.sign(
+    { userId: user.id, type: "registration" },
+    SECRET_KEY,
+    { expiresIn: "1h" }
+  );
   const verificationLink = `http://localhost:3000/auth/verify?token=${token}`;
   await sendVerificationEmail(user.email, user.fullName, verificationLink);
 
@@ -100,10 +103,12 @@ export async function resendVerificationService(email: string) {
     throw new Error("Akun ini sudah diverifikasi.");
   }
 
-  const token = jwt.sign({ userId: user.id }, SECRET_KEY, { expiresIn: "1h" });
-
+  const token = jwt.sign(
+    { userId: user.id, type: "registration" },
+    SECRET_KEY,
+    { expiresIn: "1h" }
+  );
   const verificationLink = `http://localhost:3000/auth/verify?token=${token}`;
-
   await sendVerificationEmail(user.email, user.fullName, verificationLink);
 
   return {

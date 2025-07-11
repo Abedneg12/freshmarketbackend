@@ -12,8 +12,8 @@ export async function requestResetPasswordService(email: string) {
   if (!user.password) throw new Error("Hanya password yang dapat direset");
 
   const token = jwt.sign({ userId: user.id }, SECRET_KEY, { expiresIn: "1h" });
-  const resetUrl = `${FE_PORT}/reset.password?token=${token}`;
-  await sendResetPasswordemail(user.email, token, resetUrl);
+  const resetUrl = `${FE_PORT}/reset-password?token=${token}`;
+  await sendResetPasswordemail(user.email, user.fullName, resetUrl);
   return { message: "Cek email Anda untuk reset password" };
 }
 

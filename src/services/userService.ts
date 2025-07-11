@@ -9,22 +9,25 @@ import { JWT_SECRET } from "../config";
 const SECRET_KEY = JWT_SECRET || "supersecret";
 
 export async function getProfileService(userPayLoad: IUserPayload) {
-  const userProfile = await prisma.user.findUnique({
+  const user = await prisma.user.findUnique({
     where: { id: userPayLoad.id },
-    select: {
-      id: true,
-      fullName: true,
-      email: true,
-      profilePicture: true,
-      referralCode: true,
-    },
   });
 
-  if (!userProfile) {
+  if (!user) {
     throw new Error("User tidak ditemukan");
   }
 
-  return userProfile;
+  return {
+    id: user.id,
+    fullName: user.fullName,
+    email: user.email,
+    profilePicture: user.profilePicture,
+    referralCode: user.referralCode,
+    isVerified: user.isVerified,
+    hashPassword: !!user.password,
+  };
+
+  return user;
 }
 
 export async function updateProfileService(
@@ -98,8 +101,16 @@ export async function requestEmailUpdateService(
   userId: number,
   newEmail: string
 ) {
-  const emailExist = await prisma.user.findUnique({
-    where: { email: newEmail },
+  const emailExist = await prisma.user.findFirst({
+    where: {
+      email: {
+        equals: newEmail,
+        mode: "insensitive",
+      },
+      NOT: {
+        id: userId,
+      },
+    },
   });
   if (emailExist) {
     throw new Error("Email ini sudah digunakan oleh akun lain.");
@@ -114,8 +125,12 @@ export async function requestEmailUpdateService(
     throw new Error("User tidak ditemukan.");
   }
 
-  const token = jwt.sign({ userId, newEmail }, SECRET_KEY, { expiresIn: "1h" });
-  const confirmationLink = `http://localhost:3000/user/confirm-email-update?token=${token}`;
+  const token = jwt.sign(
+    { userId, newEmail, type: "email_update" },
+    SECRET_KEY,
+    { expiresIn: "1h" }
+  );
+  const confirmationLink = `http://localhost:8000/api/user/confirm-email-update?token=${token}`;
   await sendUpdateEmailVerification(newEmail, user.fullName, confirmationLink);
 
   return {
@@ -127,7 +142,12 @@ export async function confirmEmailUpdateService(token: string) {
   const decoded = jwt.verify(token, SECRET_KEY) as {
     userId: number;
     newEmail: string;
+    type: string;
   };
+
+  if (decoded.type !== "email_update") {
+    throw new Error("Token tidak valid untuk aksi ini.");
+  }
 
   await prisma.user.update({
     where: { id: decoded.userId },
@@ -137,4 +157,22 @@ export async function confirmEmailUpdateService(token: string) {
   });
 
   return { message: "Alamat email Anda telah diperbarui." };
+}
+
+export async function createPasswordService(userId: number, password: string) {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+
+  if (!user) {
+    throw new Error("User tidak ditemukan.");
+  }
+  if (user.password) {
+    throw new Error("Akun ini tidak memiliki password");
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { password: hashedPassword },
+  });
 }

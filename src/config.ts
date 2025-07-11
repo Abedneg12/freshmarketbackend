@@ -14,4 +14,5 @@ export const {
   OPENCAGE_KEY,
   MIDTRANS_CLIENT_KEY,
   MIDTRANS_SERVER_KEY,
+  DEFAULT_STORE_ID,
 } = process.env;
