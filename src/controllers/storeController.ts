@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { getRecommendedStores } from "../services/storeService";
+import { getRecommendedStores, getAllStores} from "../services/storeService";
 
 export async function getRecommendations(req: Request, res: Response) {
   try {
@@ -7,6 +7,15 @@ export async function getRecommendations(req: Request, res: Response) {
     const lng = parseFloat(req.query.lng as string);
 
     const data = await getRecommendedStores(lat, lng);
+    res.json(data);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+}
+
+export async function getAllStoresController(req: Request, res: Response) {
+  try {
+    const data = await getAllStores();
     res.json(data);
   } catch (error: any) {
     res.status(400).json({ error: error.message });

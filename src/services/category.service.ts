@@ -3,10 +3,16 @@ import prisma from "../lib/prisma";
 export const getAllCategories = async () => {
   try {
     return await prisma.productCategory.findMany({
-        select: {
+      select: {
+        id: true,
+        name: true,
+        products: {
+          select: {
             id: true,
-            name: true,
-        },
+            name: true
+          },
+        }
+      },
     });
   } catch (err) {
     console.error("Error fetching categories:", err);

@@ -13,9 +13,9 @@ export const getAllUsersController = async (req: Request, res: Response, next: N
 };
 
 export const createStoreAdminController = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const { email, fullName, password } = req.body;
+    const { email, fullName, password, storeIds } = req.body;
     try {
-        const result = await createStoreAdmin(email, fullName, password);
+        const result = await createStoreAdmin(email, fullName, password, storeIds);
         res.status(201).json(result);
     } catch (error) {
         console.error("Error creating store admin:", error);
@@ -50,9 +50,9 @@ export const deleteStoreAdminController = async (req: Request, res: Response, ne
 
 export const updateStoreAdminController = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { userId } = req.params;
-    const data = req.body;
+    const { storeIds, ...data } = req.body;
     try {
-        const result = await updateStoreAdmin(Number(userId), data);
+        const result = await updateStoreAdmin(Number(userId), data, storeIds || []);
         res.status(200).json(result);
     } catch (error) {
         console.error("Error updating store admin:", error);

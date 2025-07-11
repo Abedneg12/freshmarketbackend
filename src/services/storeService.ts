@@ -45,3 +45,8 @@ export async function getRecommendedStores(lat: number, lng: number) {
 
   return results;
 }
+
+export async function getAllStores() {
+  const stores = await prisma.store.findMany();
+  return stores;
+}
