@@ -10,7 +10,7 @@ const router = Router();
 router.use(verifiedOnlyMiddleware);
 
 // Tambah item ke cart
-router.post('/', validateBody(addToCartSchema), cartController.addItemToCart);
+router.post('/add', validateBody(addToCartSchema), cartController.addItemToCart);
 
 // Ambil semua cart user
 router.get('/', cartController.getMyCart);

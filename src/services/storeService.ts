@@ -1,8 +1,53 @@
 import prisma from "../lib/prisma";
 import { calculateDistanceKm } from "../utils/haversine";
+import { DEFAULT_STORE_ID } from "../config";
 
-export async function getRecommendedStores(lat: number, lng: number) {
-  if (!lat || !lng) throw new Error("Lokasi tidak valid");
+export async function getRecommendedStores(lat?: number, lng?: number) {
+  if (!lat || !lng) {
+    if (!DEFAULT_STORE_ID) {
+      throw new Error("Toko default belum dikonfigurasi di server.");
+    }
+
+    const defaultStore = await prisma.store.findUnique({
+      where: { id: Number(DEFAULT_STORE_ID) },
+      include: {
+        products: {
+          include: {
+            product: {
+              include: {
+                images: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!defaultStore) {
+      return [];
+    }
+
+    const products = defaultStore.products.map((item) => ({
+      id: item.product.id,
+      name: item.product.name,
+      price: item.product.basePrice,
+      images: item.product.images?.[0]?.imageUrl ?? "",
+      stock: item.quantity,
+    }));
+
+    return [
+      {
+        id: defaultStore.id,
+        name: defaultStore.name,
+        images: defaultStore.imageUrl,
+        address: defaultStore.address,
+        distanceKm: 0,
+        products,
+      },
+    ];
+  }
+
+  if (!lat || !lng) throw new Error("Lokasi tidak valid.");
 
   const allStores = await prisma.store.findMany({
     include: {
@@ -36,6 +81,7 @@ export async function getRecommendedStores(lat: number, lng: number) {
       results.push({
         id: store.id,
         name: store.name,
+        imageUrl: store.imageUrl,
         address: store.address,
         distanceKm: parseFloat(dist.toFixed(2)),
         products,

@@ -4,7 +4,9 @@ import express from 'express';
 import { 
     createOrderController, 
     getUserOrdersController,
-    uploadPaymentProofController // <-- 1. Import controller baru
+    uploadPaymentProofController,
+    cancelOrderByUserController,
+    confirmOrderReceivedController
 } from '../controllers/order.controller';
 import { validateBody } from '../middlewares/validationMiddleware';
 import { checkoutSchema } from '../validations/order.validation';
@@ -13,19 +15,29 @@ import { Multer } from '../utils/multer';
 
 const router = express.Router();
 
-// Middleware ini berlaku untuk semua rute di bawahnya
+// Semua route di bawah ini hanya bisa diakses oleh user yang sudah login dan terverifikasi
 router.use(verifiedOnlyMiddleware);
 
-// Rute untuk membuat pesanan baru (sudah ada)
+//route untuk membuat order baru
 router.post('/', validateBody(checkoutSchema), createOrderController);
 
-// Rute untuk mengambil daftar pesanan user (sudah ada)
+//route untuk mengambil semua order milik user
 router.get('/my', getUserOrdersController);
 
+//route untuk mengupload bukti pembayaran
 router.post(
   '/:orderId/payment-proof',
   Multer("memoryStorage").single('paymentProof'),
   uploadPaymentProofController
 );
+
+
+//route untuk membatalkan order oleh user (selama status masih waiting for payment)
+router.post('/my/:orderId/cancel', cancelOrderByUserController);
+
+
+//route untuk mengkonfirmasi penerimaan order oleh user
+router.post('/my/:orderId/confirm', confirmOrderReceivedController);
+
 
 export default router;

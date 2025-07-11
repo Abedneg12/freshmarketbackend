@@ -1,9 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import * as orderService from '../services/order.service';
 import { cloudinaryUpload } from '../utils/cloudinary';
-/**
- * Controller untuk membuat pesanan baru dari checkout.
- */
+
+
 export const createOrderController = async (
   req: Request,
   res: Response,
@@ -125,5 +124,66 @@ export const handleMidtransNotificationController = async (req: Request, res: Re
     console.error('[Midtrans Notification Error]', error);
     // Jika ada error, Midtrans akan mencoba mengirim notifikasi lagi nanti.
     res.status(500).json({ message: error.message });
+  }
+};
+
+export const cancelOrderByUserController = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    // Ambil data user dari token
+    const user = req.user;
+    if (!user) {
+      // Mengirim respons dan menghentikan eksekusi
+      res.status(401).json({ message: 'Unauthorized: Pengguna tidak ditemukan' });
+      return;
+    }
+
+    // Ambil orderId dari parameter URL
+    const orderId = Number(req.params.orderId);
+
+    // Panggil service untuk menjalankan logika utama
+    const canceledOrder = await orderService.cancelOrderByUser(user.id, orderId);
+
+    res.status(200).json({
+      message: `Pesanan #${orderId} telah berhasil Anda batalkan.`,
+      data: canceledOrder,
+    });
+
+  } catch (error: any) {
+    // Tangani error yang mungkin dilempar dari service
+    res.status(400).json({ message: error.message });
+  }
+};
+
+
+export const confirmOrderReceivedController = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    // Ambil data user dari token
+    const user = req.user;
+    if (!user) {
+      res.status(401).json({ message: 'Unauthorized: Pengguna tidak ditemukan' });
+      return;
+    }
+
+    // Ambil orderId dari parameter URL
+    const orderId = Number(req.params.orderId);
+
+    // Panggil service untuk menjalankan logika utama
+    const confirmedOrder = await orderService.confirmOrderReceived(user.id, orderId);
+
+    res.status(200).json({
+      message: `Pesanan #${orderId} telah berhasil Anda konfirmasi.`,
+      data: confirmedOrder,
+    });
+
+  } catch (error: any) {
+    // Tangani error yang mungkin dilempar dari service
+    // (misal: pesanan tidak ditemukan, atau status tidak valid)
+    res.status(400).json({ message: error.message });
   }
 };

@@ -22,6 +22,11 @@ export async function OAuthLogin(profile: OAuthProfile) {
 
   if (!user) {
     // jika belum ada, buat user baru
+    const nameCode = profile.displayName.split(" ")[0].toLowerCase();
+    const newReferralCode = `REF-${nameCode}-${Date.now()
+      .toString()
+      .slice(-4)}`;
+
     user = await prisma.user.create({
       data: {
         fullName: profile.displayName,
@@ -29,11 +34,19 @@ export async function OAuthLogin(profile: OAuthProfile) {
         isVerified: true,
         provider: profile.provider,
         providerId: profile.providerId,
+        referralCode: newReferralCode,
       },
     });
   }
 
-  const token = jwt.sign({ userId: user.id, role: user.role }, SECRET_KEY, {
+  const payload = {
+    id: user.id,
+    email: user.email,
+    role: user.role,
+    isVerified: user.isVerified,
+  };
+
+  const token = jwt.sign(payload, SECRET_KEY, {
     expiresIn: "7d",
   });
 
