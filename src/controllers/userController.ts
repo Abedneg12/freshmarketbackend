@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import * as userService from "../services/userService";
 import { IUserPayload } from "../interfaces/IUserPayload";
+import { FE_PORT } from "../config";
 
 export async function getProfileController(req: Request, res: Response) {
   try {
@@ -110,11 +111,31 @@ export async function confirmEmailUpdateController(
     const { token } = req.query;
 
     if (!token || typeof token !== "string") {
-      res.status(400).json({ error: "Token tidak valid atau tidak ada." });
+      return res
+        .status(400)
+        .json({ error: "Token tidak valid atau tidak ada." });
+    }
+    await userService.confirmEmailUpdateService(token);
+    return res.redirect(`${FE_PORT}/profile?email_update_success=true`);
+  } catch (error: any) {
+    const errorMessage = encodeURIComponent(
+      error.message || "Konfirmasi email gagal"
+    );
+    return res.redirect(`${FE_PORT}/error?message=${errorMessage}`);
+  }
+}
+
+export async function createPasswordController(req: Request, res: Response) {
+  try {
+    const userId = (req.user as IUserPayload).id;
+    const { password } = req.body;
+
+    if (!password) {
+      res.status(400).json({ error: "Password tidak boleh kosong." });
       return;
     }
-    const result = await userService.confirmEmailUpdateService(token);
-    res.status(200).json(result);
+    await userService.createPasswordService(userId, password);
+    res.status(200).json({ message: "Password berhasil dibuat." });
   } catch (error: any) {
     res.status(400).json({ error: error.message });
   }
