@@ -25,6 +25,7 @@ export async function getProfileService(userPayLoad: IUserPayload) {
     referralCode: user.referralCode,
     isVerified: user.isVerified,
     hashPassword: !!user.password,
+    role : user.role,
   };
 
   return user;
