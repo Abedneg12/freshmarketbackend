@@ -26,11 +26,11 @@ export async function getProfileService(userPayLoad: IUserPayload) {
     isVerified: user.isVerified,
     hashPassword: !!user.password,
     role: user.role,
+
   };
 
   return user;
 }
-
 export async function updateProfileService(
   userId: number,
   newfullName: string
