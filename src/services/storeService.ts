@@ -91,3 +91,77 @@ export async function getRecommendedStores(lat?: number, lng?: number) {
 
   return results;
 }
+
+export async function getAllStores() {
+  const stores = await prisma.store.findMany();
+  return stores;
+}
+
+export async function getStoreProducts(storeId: number) {
+  const store = await prisma.store.findUnique({
+    where: { id: storeId },
+    include: {
+      products: {
+        include: {
+          product: {
+            include: {
+              images: true,
+              category: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!store) throw new Error("Toko tidak ditemukan.");
+
+  const products = store.products.map((item) => ({
+    id: item.product.id,
+    name: item.product.name,
+    price: item.product.basePrice,
+    images: item.product.images?.[0]?.imageUrl ?? "",
+    stock: item.quantity,
+  }));
+
+  return {
+    id: store.id,
+    name: store.name,
+    imageUrl: store.imageUrl,
+    address: store.address,
+    products,
+  };
+}
+
+export async function getStoreById(storeId: number) {
+  const store = await prisma.store.findUnique({
+    where: { id: storeId },
+    include: {
+      products: {
+        include: {
+          product: {
+            include: {
+              images: true,
+              category: true,
+              discounts: true,
+              stocks: true,
+              cartItems: true,
+              orderItems: true,
+              InventoryJournal: true,
+              Voucher: true,
+            },
+          },
+        },
+      },
+      discounts: true,
+      journals: true,
+      orders: true,
+      admins: true,
+      carts: true,
+    },
+  });
+
+  if (!store) throw new Error("Toko tidak ditemukan.");
+
+  return store;
+}

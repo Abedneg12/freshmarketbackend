@@ -66,13 +66,6 @@ export const createVoucherService = async (voucher: DiscountVoucher) => {
 
 export const getAllDiscountsService = async () => {
     return await prisma.discount.findMany({
-        select: {
-            id: true,
-            type: true,
-            value: true,
-            startDate: true,
-            endDate: true,
-        },
     });
 }
 

@@ -4,8 +4,7 @@ import { Request, Response } from 'express';
 import { getMonthlySalesReport, getMonthlySalesByCategoryReport, getMonthlySalesByProductReport } from '../services/sales.report.service';
 import { OrderStatus } from '@prisma/client';
 import { TPaymentDecision } from '../interfaces/admin.interface';
-import { AuthRequest } from '../middlewares/roleMiddleware';
-export const getMonthlySalesReportController = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getMonthlySalesReportController = async (req: Request, res: Response): Promise<void> => {
     const adminUser = req.user;
     if (!adminUser) {
         res.status(401).json({ message: 'Unauthorized: Admin not found' });
@@ -31,7 +30,7 @@ export const getMonthlySalesReportController = async (req: AuthRequest, res: Res
     }
 };
 
-export const getMonthlySalesByCategoryReportController = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getMonthlySalesByCategoryReportController = async (req: Request, res: Response): Promise<void> => {
     const adminUser = req.user;
     if (!adminUser) {
         res.status(401).json({ message: 'Unauthorized: Admin not found' });
@@ -57,7 +56,7 @@ export const getMonthlySalesByCategoryReportController = async (req: AuthRequest
     }
 };
 
-export const getMonthlySalesByProductReportController = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getMonthlySalesByProductReportController = async (req: Request, res: Response): Promise<void> => {
     const adminUser = req.user;
     if (!adminUser) {
         res.status(401).json({ message: 'Unauthorized: Admin not found' });
