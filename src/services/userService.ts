@@ -25,12 +25,12 @@ export async function getProfileService(userPayLoad: IUserPayload) {
     referralCode: user.referralCode,
     isVerified: user.isVerified,
     hashPassword: !!user.password,
-    role : user.role,
+    role: user.role,
+
   };
 
   return user;
 }
-
 export async function updateProfileService(
   userId: number,
   newfullName: string
