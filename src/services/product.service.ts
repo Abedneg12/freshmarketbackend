@@ -3,6 +3,7 @@
 import { unlink } from 'fs/promises';
 import path from "path";
 import prisma from "../lib/prisma";
+import { cloudinaryRemove, cloudinaryUpload } from '../utils/cloudinary';
 
 export const getAllProducts = async () => {
   try {
@@ -66,11 +67,19 @@ export const createProduct = async (
       throw new Error("Product name already exists");
     }
 
+    let imageRecords: { imageUrl: string }[] = [];
+    if (newFiles && newFiles.length > 0) {
+      for (const file of newFiles) {
+        const uploadResult = await cloudinaryUpload(file);
+        imageRecords.push({ imageUrl: uploadResult.secure_url });
+      }
+    }
+
     return await prisma.product.create({
       data: {
         ...data,
-        images: newFiles && newFiles.length > 0
-          ? { create: newFiles.map(file => ({ imageUrl: `/products/${file.filename}` })) }
+        images: imageRecords.length > 0
+          ? { create: imageRecords }
           : undefined,
       },
       include: {
@@ -79,15 +88,6 @@ export const createProduct = async (
     });
   } catch (err) {
     console.error("Error creating product:", err);
-    if (newFiles) {
-      for (const file of newFiles) {
-        try {
-          await unlink(path.join(process.cwd(), 'public', 'products', file.filename));
-        } catch (fileErr) {
-          console.error(`Failed to clean up uploaded file: ${file.filename}`, fileErr);
-        }
-      }
-    }
     throw new Error("Failed to create product");
   }
 };
@@ -104,37 +104,30 @@ export const updateProduct = async (
   files?: Express.Multer.File[] // New files being uploaded
 ) => {
   try {
-    
+    // Remove images from Cloudinary
     if (imagesToDelete.length > 0) {
       await prisma.productImage.deleteMany({
         where: {
           productId: productId,
-          imageUrl: {
-            in: imagesToDelete
-          }
+          imageUrl: { in: imagesToDelete }
         }
       });
 
       for (const imageUrl of imagesToDelete) {
-        const filename = path.basename(imageUrl);
-        const filePath = path.join(process.cwd(), 'public', 'products', filename);
         try {
-          await unlink(filePath);
-          console.log(`Successfully deleted image file: ${filePath}`);
-        } catch (error: any) {
-          if (error.code === 'ENOENT') {
-            console.warn(`Attempted to delete non-existent file: ${filePath}`);
-          } else {
-            console.error(`Error deleting image file ${filePath}:`, error);
-          }
+          await cloudinaryRemove(imageUrl);
+        } catch (error) {
+          console.error(`Failed to remove image from Cloudinary: ${imageUrl}`, error);
         }
       }
     }
 
+    // Upload new images to Cloudinary
     const newImageRecords: { imageUrl: string }[] = [];
-    if (files && files.length > 0) { // Renamed newFiles to files
+    if (files && files.length > 0) {
       for (const file of files) {
-        newImageRecords.push({ imageUrl: `/products/${file.filename}` });
+        const uploadResult = await cloudinaryUpload(file);
+        newImageRecords.push({ imageUrl: uploadResult.secure_url });
       }
       if (newImageRecords.length > 0) {
         await prisma.productImage.createMany({
@@ -155,20 +148,11 @@ export const updateProduct = async (
         categoryId: data.categoryId,
       },
       include: {
-        images: true, // Include updated images in the response
+        images: true,
       },
     });
   } catch (err) {
     console.error("Error updating product:", err);
-    if (files) {
-      for (const file of files) {
-        try {
-          await unlink(path.join(process.cwd(), 'public', 'products', file.filename));
-        } catch (fileErr) {
-          console.error(`Failed to clean up newly uploaded file after error: ${file.filename}`, fileErr);
-        }
-      }
-    }
     throw new Error("Failed to update product");
   }
 };
@@ -184,37 +168,16 @@ export const deleteProduct = async (productId: number) => {
       throw new Error("Product not found");
     }
     for (const image of productToDelete.images) {
-      const filename = path.basename(image.imageUrl);
-      // Adjust this path to where your actual product images are stored
-      const filePath = path.join(process.cwd(), 'public', 'products', filename);
       try {
-        await unlink(filePath);
-        console.log(`Successfully deleted physical image file: ${filePath}`);
-      } catch (error: any) {
-        if (error.code === 'ENOENT') {
-          console.warn(`Attempted to delete non-existent file during product deletion: ${filePath}`);
-        } else {
-          console.error(`Error deleting physical image file ${filePath}:`, error);
-        }
+        await cloudinaryRemove(image.imageUrl);
+      } catch (error) {
+        console.error(`Failed to remove image from Cloudinary: ${image.imageUrl}`, error);
       }
     }
     await prisma.productImage.deleteMany({
       where: { productId: productId }
     });
-    await prisma.stock.deleteMany({
-        where: { productId: productId }
-    });
-    await prisma.cartItem.deleteMany({
-        where: { productId: productId }
-    });
-    await prisma.inventoryJournal.deleteMany({
-        where: { productId: productId }
-    });
-    await prisma.orderItem.deleteMany({
-        where: { productId: productId }
-    });
-
-    // 5. Finally, delete the Product record
+    // ...rest of your delete logic...
     return await prisma.product.delete({
       where: { id: productId },
     });

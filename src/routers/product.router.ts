@@ -3,7 +3,7 @@ import { Multer } from "../utils/multer";
 import express from 'express';
 
 const router = express.Router();
-const upload = Multer("diskStorage", "product-", "products");
+const upload = Multer("memoryStorage", "product-", "products");
 
 router.post("/", upload.array("images"), createProductController);
 router.put("/:productId", upload.array("images"), updateProductController);
