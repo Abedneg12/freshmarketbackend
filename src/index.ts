@@ -21,20 +21,15 @@ import AdminOrderRouters from './routers/admin/admin.order.router';
 import CategoryRouters from "./routers/category.router";
 import ProductRouters from "./routers/product.router";
 import InventoryRouters from "./routers/inventory.router";
+import addressRoutes from "./routers/address.router";
+import shippingRoutes from "./routers/shipping.router";
+import { authOnlyMiddleware } from "./middlewares/authOnlyMiddleware";
 
 
 const port = PORT || 8000;
 const app: Application = express();
 
 app.use(helmet());
-app.use((req, res, next) => {
-  if (req.path.startsWith('/products/') && req.method === 'GET') {
-    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-  } else {
-    res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
-  }
-  next();
-});
 app.use(
   cors({
     origin: FE_PORT || 'http://localhost:3000',
@@ -69,6 +64,9 @@ app.use("/api/user", userRoutes);
 app.use("/category", CategoryRouters);
 app.use("/product", ProductRouters);
 app.use("/inventory", InventoryRouters);
+app.use("/api/addresses", authOnlyMiddleware, addressRoutes);
+app.use("/api/shipping", authOnlyMiddleware, shippingRoutes);
+
 
 app.listen(port, () => {
   console.log(`Server started on port ${port}`);

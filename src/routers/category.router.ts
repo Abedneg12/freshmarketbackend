@@ -6,12 +6,10 @@ import { requireRole } from '../middlewares/roleMiddleware';
 
 const router = express.Router();
 
-router.use(authOnlyMiddleware, requireRole([UserRole.SUPER_ADMIN]));
-
 router.get("/", getAllCategoriesController);
 router.get("/:categoryId", getCategoryByIdController);
-router.post("/", createCategoryController);
-router.put("/:categoryId", updateCategoryController);
-router.delete("/:categoryId", deleteCategoryController);
+router.post("/", authOnlyMiddleware, requireRole([UserRole.SUPER_ADMIN]), createCategoryController);
+router.put("/:categoryId", authOnlyMiddleware, requireRole([UserRole.SUPER_ADMIN]), updateCategoryController);
+router.delete("/:categoryId", authOnlyMiddleware, requireRole([UserRole.SUPER_ADMIN]), deleteCategoryController);
 
 export default router;
