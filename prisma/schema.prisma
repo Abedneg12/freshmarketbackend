@@ -41,6 +41,7 @@ model Store {
   longitude Float
   createdAt DateTime               @default(now())
   imageUrl  String                 @default("")
+  city      String                 @default("")
   carts     Cart[]
   discounts Discount[]
   journals  InventoryJournal[]
