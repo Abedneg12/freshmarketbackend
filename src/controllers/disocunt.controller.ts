@@ -1,39 +1,15 @@
 import { Request, Response, NextFunction } from "express";
-import { DiscountBOGO, DiscountProduct, DiscountVoucher } from "../interfaces/discount.type";
-import { createDiscountBOGOService, createDiscountProductService, createVoucherService, deleteDiscountService, getAllDiscountsService, updateDiscountService } from "../services/discount.service";
+import { Discount, DiscountType } from "../interfaces/discount.type";
+import { createDiscountService, deleteDiscountService, getAllDiscountsService, updateDiscountService } from "../services/discount.service";
 
-export const createDiscountBOGOController = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const discount: DiscountBOGO = req.body;
+export const createDiscountController = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const discount: Discount & { type: DiscountType } = req.body;
     try {
-        const result = await createDiscountBOGOService(discount);
+        const result = await createDiscountService(discount);
         res.status(201).json(result);
     } catch (error) {
-        console.error("Error creating BOGO discount:", error);
-        res.status(500).json({ message: "Failed to create BOGO discount" });
-        next(error);
-    }
-};
-
-export const createDiscountProductController = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const discount: DiscountProduct = req.body;
-    try {
-        const result = await createDiscountProductService(discount);
-        res.status(201).json(result);
-    } catch (error) {
-        console.error("Error creating product discount:", error);
-        res.status(500).json({ message: "Failed to create product discount" });
-        next(error);
-    }
-};
-
-export const createVoucherController = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const voucher: DiscountVoucher = req.body;
-    try {
-        const result = await createVoucherService(voucher);
-        res.status(201).json(result);
-    } catch (error) {
-        console.error("Error creating voucher:", error);
-        res.status(500).json({ message: "Failed to create voucher" });
+        console.error("Error creating discount:", error);
+        res.status(500).json({ message: "Failed to create discount" });
         next(error);
     }
 };

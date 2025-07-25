@@ -117,9 +117,9 @@ model Discount {
   type        DiscountType
   minPurchase Int?
   maxDiscount Int?
+  value       Int?         @default(0)
   startDate   DateTime
   endDate     DateTime
-  value       Int?         @default(0)
   product     Product?     @relation(fields: [productId], references: [id])
   store       Store        @relation(fields: [storeId], references: [id])
 }

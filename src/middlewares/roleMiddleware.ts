@@ -4,6 +4,7 @@ import { IUserPayload } from '../interfaces/IUserPayload';
 
 export const requireRole = (roles: UserRole[]) => {
   return (req: Request, res: Response, next: NextFunction): void => {
+    console.log(req.user);
     if (!req.user) {
       res.status(401).json({ message: 'Unauthorized - user not authenticated' });
       return;
