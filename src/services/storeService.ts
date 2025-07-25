@@ -119,8 +119,10 @@ export async function getStoreProducts(storeId: number) {
   const products = store.products.map((item) => ({
     id: item.product.id,
     name: item.product.name,
+    basePrice: item.product.basePrice,
+    category: item.product.category,
     price: item.product.basePrice,
-    images: item.product.images?.[0]?.imageUrl ?? "",
+    images: item.product.images,
     stock: item.quantity,
   }));
 

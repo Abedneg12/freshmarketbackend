@@ -1,21 +1,10 @@
 import { z } from 'zod';
 
-export const createDiscountProductSchema = z.object({
-  productId: z.number().min(1),
-  storeId: z.number().min(1),
+export const createDiscountServiceSchema = z.object({
+  productId: z.number().optional(),
+  storeId: z.number(),
   value: z.number().min(1),
-  startDate: z.string().refine((val) => !isNaN(Date.parse(val)), {
-    message: "Invalid start date",
-  }),
-  endDate: z.string().refine((val) => !isNaN(Date.parse(val)), {
-    message: "Invalid end date",
-  }),
-});
-
-export const createDiscountVoucherSchema = z.object({
-  storeId: z.number().min(1),
-  value: z.number().min(1),
-  minPurchase: z.number().min(1),
+  minPurchase: z.number().min(1).optional(),
   maxDiscount: z.number().optional(),
   startDate: z.string().refine((val) => !isNaN(Date.parse(val)), {
     message: "Invalid start date",
@@ -23,19 +12,9 @@ export const createDiscountVoucherSchema = z.object({
   endDate: z.string().refine((val) => !isNaN(Date.parse(val)), {
     message: "Invalid end date",
   }),
+  type: z.enum(["BUY1GET1", "NOMINAL", "PERCENTAGE"]),
 });
 
-export const createDiscountBOGOProductSchema = z.object({
-  productId: z.number().min(1),
-  storeId: z.number().min(1),
-  value: z.number().min(1),
-  startDate: z.string().refine((val) => !isNaN(Date.parse(val)), {
-    message: "Invalid start date",
-  }),
-  endDate: z.string().refine((val) => !isNaN(Date.parse(val)), {
-    message: "Invalid end date",
-  }),
-});
 
 export const updateDiscountServiceSchema = z.object({
   value: z.number().min(1).optional(),
@@ -48,11 +27,9 @@ export const updateDiscountServiceSchema = z.object({
   minPurchase: z.number().min(1).optional(),
   maxDiscount: z.number().optional(), 
   }).refine((data) => {
-    // Ensure at least one field is provided for update
     return Object.values(data).some(value => value !== undefined);
   }
   ).transform((data) => {
-    // Remove undefined values to avoid sending them to the database
     return Object.fromEntries(Object.entries(data).filter(([_, value]) => value !== undefined));
   });
   

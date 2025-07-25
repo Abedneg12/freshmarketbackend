@@ -7,11 +7,14 @@ import { registerStoreAdminSchema } from '../validations/super.admin.validation'
 import { UserRole } from "@prisma/client";
 
 const router = express.Router();
-router.get("/users", authOnlyMiddleware, requireRole([UserRole.SUPER_ADMIN]), getAllUsersController);
-router.post("/store-admins", authOnlyMiddleware, requireRole([UserRole.SUPER_ADMIN]), validateBody(registerStoreAdminSchema), createStoreAdminController);
-router.post("/stores/:storeId/admins", authOnlyMiddleware, requireRole([UserRole.SUPER_ADMIN]), assignStoreAdminController);
-router.delete("/store-admins/:userId", authOnlyMiddleware, requireRole([UserRole.SUPER_ADMIN]), deleteStoreAdminController);
-router.put("/store-admins/:userId", authOnlyMiddleware, requireRole([UserRole.SUPER_ADMIN]), updateStoreAdminController);
-router.put("/store-admins/:userId/assign", authOnlyMiddleware, requireRole([UserRole.SUPER_ADMIN]), updateStoreAdminAssigmentController);
+
+router.use(authOnlyMiddleware, requireRole([UserRole.SUPER_ADMIN]));
+
+router.get("/users", getAllUsersController);
+router.post("/store-admins", validateBody(registerStoreAdminSchema), createStoreAdminController);
+router.post("/stores/:storeId/admins", assignStoreAdminController);
+router.delete("/store-admins/:userId", deleteStoreAdminController);
+router.put("/store-admins/:userId", updateStoreAdminController);
+router.put("/store-admins/:userId/assign", updateStoreAdminAssigmentController);
 
 export default router;

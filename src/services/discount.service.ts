@@ -1,74 +1,59 @@
 import prisma from "../lib/prisma";
-import { DiscountVoucher, DiscountBOGO, DiscountProduct } from "../interfaces/discount.type";
-import { DiscountType } from "@prisma/client";
+import { Discount, DiscountType} from "../interfaces/discount.type";
 
-export const createDiscountBOGOService = async (discount: DiscountBOGO) => {
-    const { productId, storeId, value, startDate, endDate } = discount;
+export const createDiscountService = async (discount: Discount & { type: DiscountType }) => {
+    const { type, productId, storeId, value, minPurchase, maxDiscount, startDate, endDate } = discount;
+
+    // Validation logic
+    if (type === "BUY1GET1") {
+        if (!productId) throw new Error("BOGO discount requires productId.");
+    } else if (type === "NOMINAL" || type === "PERCENTAGE") {
+        if (!productId && !minPurchase) {
+            throw new Error("minPurchase is required for cart-wide discount.");
+        }
+        if (type === "PERCENTAGE" && maxDiscount !== undefined && isNaN(Number(maxDiscount))) {
+            throw new Error("maxDiscount must be a number for percentage discount.");
+        }
+        if (value === undefined || isNaN(Number(value))) {
+            throw new Error("value must be a number for nominal/percentage discount.");
+        }
+    } else {
+        throw new Error("Invalid discount type.");
+    }
+
+    // Check for existing discount
     const existingDiscount = await prisma.discount.findFirst({
-        where: {
-            productId,
-            storeId,
-            type: DiscountType.BUY1GET1,
-        },
+        where: { productId, storeId, type }
     });
     if (existingDiscount) {
-        throw new Error("A BOGO discount already exists for this product.");
+        throw new Error(`A ${type} discount already exists for this product/store.`);
     }
-    return await prisma.discount.create({
-        data: {
-            productId,
-            storeId,
-            value,
-            startDate: new Date(startDate),
-            endDate: new Date(endDate),
-            type: DiscountType.BUY1GET1,
-        },
-    });
-}
-export const createDiscountProductService = async (discount: DiscountProduct) => {
-    const { productId, storeId, value, startDate, endDate } = discount;
-    const existingDiscount = await prisma.discount.findFirst({
-        where: {
-            productId,
-            storeId,
-            type: DiscountType.PERCENTAGE,
-        },
-    });
-    if (existingDiscount) {
-        throw new Error("A percentage discount already exists for this product.");
-    }
-    return await prisma.discount.create({
-        data: {
-            productId,
-            storeId,
-            value,
-            startDate: new Date(startDate),
-            endDate: new Date(endDate),
-            type: DiscountType.NOMINAL,
-        },
-    });
-}
-export const createVoucherService = async (voucher: DiscountVoucher) => {
-    const { storeId, value, minPurchase, maxDiscount, startDate, endDate } = voucher;
 
-    return await prisma.discount.create({
-        data: {
-            storeId,
-            value,
-            minPurchase,
-            maxDiscount,
-            startDate: new Date(startDate),
-            endDate: new Date(endDate),
-            type: DiscountType.PERCENTAGE,
-        },
-    });
-}
+    // Build data object
+    const data: any = {
+        productId,
+        storeId,
+        startDate: new Date(startDate),
+        endDate: new Date(endDate),
+        type,
+    };
+
+    if (type === "NOMINAL" || type === "PERCENTAGE") {
+        data.value = Number(value);
+        if (minPurchase) data.minPurchase = minPurchase;
+        if (type === "PERCENTAGE" && maxDiscount !== undefined) {
+            data.maxDiscount = maxDiscount;
+        }
+    }
+
+    // BOGO does not need value, minPurchase, maxDiscount
+
+    return await prisma.discount.create({ data });
+};
 
 export const getAllDiscountsService = async () => {
-    return await prisma.discount.findMany({
-    });
-}
-
+    return await prisma.discount.findMany({});
+};
 
 export const deleteDiscountService = async (discountId: number) => {
     const discount = await prisma.discount.findUnique({
@@ -80,9 +65,9 @@ export const deleteDiscountService = async (discountId: number) => {
     return await prisma.discount.delete({
         where: { id: discountId },
     });
-}
+};
 
-export const updateDiscountService = async (discountId: number, data: Partial<DiscountProduct | DiscountVoucher | DiscountBOGO>) => {
+export const updateDiscountService = async (discountId: number, data: Partial<Discount>) => {
     const discount = await prisma.discount.findUnique({
         where: { id: discountId },
     });
@@ -92,21 +77,9 @@ export const updateDiscountService = async (discountId: number, data: Partial<Di
     return await prisma.discount.update({
         where: { id: discountId },
         data: {
-            ...data,   
-            value: data.value ?? discount.value,
-            minPurchase: 'minPurchase' in data ? (data as any).minPurchase ?? discount.minPurchase : discount.minPurchase,
-            maxDiscount: 'maxDiscount' in data ? (data as any).maxDiscount ?? discount.maxDiscount : discount.maxDiscount,
+            ...data,
             startDate: data.startDate ? new Date(data.startDate) : discount.startDate,
             endDate: data.endDate ? new Date(data.endDate) : discount.endDate,
         },
     });
-}
-
-export function calculateDiscount(discountStr: string, price: number): number {
-    if (discountStr.endsWith('%')) {
-        const percent = parseFloat(discountStr.slice(0, -1));
-        return Math.floor(price * (percent / 100));
-    } else {
-        return parseInt(discountStr, 10);
-    }
-}
+};

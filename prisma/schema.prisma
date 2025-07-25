@@ -41,6 +41,7 @@ model Store {
   longitude Float
   createdAt DateTime               @default(now())
   imageUrl  String                 @default("")
+  city      String                 @default("")
   carts     Cart[]
   discounts Discount[]
   journals  InventoryJournal[]
@@ -116,7 +117,7 @@ model Discount {
   type        DiscountType
   minPurchase Int?
   maxDiscount Int?
-  value       String
+  value       Int? @default(0)
   startDate   DateTime
   endDate     DateTime
   product     Product?     @relation(fields: [productId], references: [id])
