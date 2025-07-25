@@ -6,7 +6,8 @@ import {
     getUserOrdersController,
     uploadPaymentProofController,
     cancelOrderByUserController,
-    confirmOrderReceivedController
+    confirmOrderReceivedController,
+    getOrderByIdController
 } from '../controllers/order.controller';
 import { validateBody } from '../middlewares/validationMiddleware';
 import { checkoutSchema } from '../validations/order.validation';
@@ -23,7 +24,7 @@ router.post('/', validateBody(checkoutSchema), createOrderController);
 
 //route untuk mengambil semua order milik user
 router.get('/my', getUserOrdersController);
-
+router.get('/my/:orderId', getOrderByIdController);
 //route untuk mengupload bukti pembayaran
 router.post(
   '/:orderId/payment-proof',

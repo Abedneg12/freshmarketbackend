@@ -3,6 +3,9 @@
 import { unlink } from 'fs/promises';
 import path from "path";
 import prisma from "../lib/prisma";
+import { IProductFilters } from '../interfaces/product.type';
+import { IUserPayload } from '../interfaces/IUserPayload';
+import { Prisma } from '@prisma/client';
 
 export const getAllProducts = async () => {
   try {
@@ -26,6 +29,91 @@ export const getAllProducts = async () => {
     console.error("Error fetching products:", err);
     throw new Error("Failed to fetch products");
   }
+};
+
+export const getProductsForStoreAdmin = async (
+    adminUser: IUserPayload,
+    filters: IProductFilters = {}
+) => {
+    try {
+        const { page = 1, limit = 10, search, category } = filters;
+        const skip = (page - 1) * limit;
+
+        // Langkah 1 & 2: Cari semua toko yang di-assign ke admin ini
+        const assignments = await prisma.storeAdminAssignment.findMany({
+            where: { userId: adminUser.id },
+            select: { storeId: true },
+        });
+
+        const assignedStoreIds = assignments.map(a => a.storeId);
+
+        // Jika admin tidak ditugaskan di toko manapun, kembalikan hasil kosong
+        if (assignedStoreIds.length === 0) {
+            return {
+                data: [],
+                pagination: { total: 0, page, limit, totalPages: 0 }
+            };
+        }
+
+        // Langkah 3: Buat kondisi query untuk mengambil produk
+        const whereClause: Prisma.ProductWhereInput = {
+            // Kondisi utama: produk harus punya stok di salah satu toko milik admin
+            stocks: {
+                some: {
+                    storeId: {
+                        in: assignedStoreIds,
+                    },
+                },
+            },
+        };
+
+        // Tambahkan filter pencarian dan kategori jika ada
+        if (search) {
+            whereClause.name = {
+                contains: search,
+                mode: 'insensitive',
+            };
+        }
+        if (category) {
+            whereClause.categoryId = parseInt(category, 10);
+        }
+
+        // Lakukan query ke database
+        const products = await prisma.product.findMany({
+            where: whereClause,
+            include: {
+                category: true,
+                images: true,
+                // Kita juga bisa sertakan info stok khusus untuk toko admin
+                stocks: {
+                    where: {
+                        storeId: {
+                            in: assignedStoreIds,
+                        }
+                    }
+                }
+            },
+            skip: skip,
+            take: limit,
+            orderBy: { name: 'asc' }
+        });
+
+        const totalProducts = await prisma.product.count({ where: whereClause });
+
+        return {
+            data: products,
+            pagination: {
+                total: totalProducts,
+                page,
+                limit,
+                totalPages: Math.ceil(totalProducts / limit),
+            }
+        };
+
+    } catch (err) {
+        console.error("Error fetching products for store admin:", err);
+        throw new Error("Failed to fetch products");
+    }
 };
 
 export const getProductById = async (productId: number) => {
