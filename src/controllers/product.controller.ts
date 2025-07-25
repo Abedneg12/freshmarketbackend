@@ -4,6 +4,7 @@ import { Request, Response, NextFunction } from "express";
 import { createProduct, deleteProduct, getAllProducts, getProductById, updateProduct } from "../services/product.service";
 import { ProductDTO } from "../interfaces/product.type";
 import { updateProductStock } from "../services/inventory.service";
+import { getProductsForStoreAdmin } from "../services/product.service";
 
 export const getAllProductsController = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -15,6 +16,39 @@ export const getAllProductsController = async (req: Request, res: Response, next
     next(error);
   }
 };
+export const getProductsStoreAdminController = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const adminUser = req.user;
+
+    if (!adminUser) {
+      res.status(401).json({ message: 'Unauthorized: Admin not found' });
+      return;
+    }
+
+    const {
+      page,
+      limit,
+      search,
+      category,
+    } = req.query;
+
+    const result = await getProductsForStoreAdmin(adminUser, {
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined,
+      search: search as string | undefined,
+      category: category as string | undefined,
+    });
+
+    res.status(200).json({
+      message: 'Berhasil mengambil daftar produk untuk admin',
+      ...result,
+    });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Gagal mengambil daftar produk', error: error.message });
+    next(error);
+  }
+};
+
 
 export const getProductByIdController = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const productId = parseInt(req.params.productId);

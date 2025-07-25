@@ -83,6 +83,20 @@ export const getUserOrdersController = async (
   }
 };
 
+
+export const getOrderByIdController = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.id;
+    const orderId = Number(req.params.orderId);
+
+    const order = await orderService.getOrderById(userId, orderId);
+    res.status(200).json({ data: order });
+  } catch (error: any) {
+    res.status(404).json({ message: error.message });
+  }
+};
+
+
 /**
  * Controller untuk menangani upload bukti pembayaran manual.
  */

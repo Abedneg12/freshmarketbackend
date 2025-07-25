@@ -161,6 +161,26 @@ export const getUserOrdersService = async (userId: number, filter: GetUserOrders
   return { data: orders, pagination: { page, limit, total: totalOrders, totalPages: Math.ceil(totalOrders / limit) } };
 };
 
+export const getOrderById = async (userId: number, orderId: number) => {
+  try {
+    const order = await prisma.order.findFirst({
+      where: {
+        id: orderId,
+        userId: userId, // Pastikan pesanan milik pengguna yang benar
+      },
+    });
+
+    if (!order) {
+      throw new Error("Pesanan tidak ditemukan atau Anda tidak memiliki izin untuk melihatnya.");
+    }
+
+    return order;
+  } catch (err) {
+    console.error("Error fetching order by id:", err);
+    throw new Error("Gagal mengambil detail pesanan.");
+  }
+};
+
 export const submitPaymentProof = async (orderId: number, userId: number, imageUrl: string) => {
   // Fungsi ini tidak berubah
   const order = await prisma.order.findFirst({ where: { id: orderId, userId: userId } });
