@@ -21,7 +21,7 @@ router.patch("/change-password", authOnlyMiddleware, changePasswordController);
 router.patch(
   "/profile/picture",
   authOnlyMiddleware,
-  Multer("memoryStorage").single("avatar"),
+  Multer("memoryStorage").single("file"),
   updateProfilePictureController
 );
 router.post(
