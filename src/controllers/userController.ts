@@ -41,16 +41,16 @@ export async function updateProfileController(req: Request, res: Response) {
 
 export async function changePasswordController(req: Request, res: Response) {
   try {
-    const { oldPassword, newPassword } = req.body;
+    const { currentPassword, newPassword } = req.body;
 
-    if (!oldPassword || !newPassword) {
+    if (!currentPassword || !newPassword) {
       res.status(400).json({ error: "Password lama dan baru wajib diisi" });
       return;
     }
 
     await userService.changePasswordService(
       (req.user as IUserPayload).id,
-      oldPassword,
+      currentPassword,
       newPassword
     );
 
@@ -77,6 +77,7 @@ export async function updateProfilePictureController(
       .status(200)
       .json({ message: "Foto profil berhasil diperbarui", data: result });
   } catch (error: any) {
+    console.error("[PROFILE PICTURE UPLOAD ERROR]:", error);
     res.status(500).json({ error: error.message });
   }
 }
