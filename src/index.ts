@@ -18,6 +18,7 @@ import OAuthRoutes from "./routers/OAuth";
 import storeRoutes from "./routers/store";
 import userRoutes from "./routers/userRoute";
 import AdminOrderRouters from './routers/admin/admin.order.router';
+import AdminDashboardRouter from './routers/admin/dashboard.admin.router';
 import CategoryRouters from "./routers/category.router";
 import ProductRouters from "./routers/product.router";
 import InventoryRouters from "./routers/inventory.router";
@@ -52,6 +53,7 @@ app.get(
 
 app.use("/super-admin", SuperAdminRouter);
 app.use('/api/admin/orders', AdminOrderRouters);
+app.use('/api/admin/dashboard', AdminDashboardRouter);
 app.use("/discount", DiscountRouter);
 app.use('/cart', CartRouters);
 app.use('/api/orders', OrderRouters);
