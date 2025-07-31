@@ -1,14 +1,19 @@
 import { Request, Response } from "express";
-import * as addressService from "../services/address.service";
-import { IUserPayload } from "../interfaces/IUserPayload";
+import {
+  createAddress,
+  getAllAddresses,
+  updateAddress,
+  deleteAddress,
+} from "../services/address.service";
+import { IAddress } from "../interfaces/address";
 
 export const getAllAddressesController = async (
   req: Request,
   res: Response
 ) => {
   try {
-    const userId = (req.user as IUserPayload).id;
-    const addresses = await addressService.getAllAddresses(userId);
+    const userId = (req.user as any).id;
+    const addresses = await getAllAddresses(userId);
     res.status(200).json(addresses);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -17,49 +22,34 @@ export const getAllAddressesController = async (
 
 export const createAddressController = async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as IUserPayload).id;
-    const newAddress = await addressService.createAddress(userId, req.body);
+    const userId = (req.user as any).id;
+    const addressData: IAddress = req.body;
+    const newAddress = await createAddress(userId, addressData);
     res.status(201).json(newAddress);
   } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-};
-
-export const setMainAddressController = async (req: Request, res: Response) => {
-  try {
-    const userId = (req.user as IUserPayload).id;
-    const addressId = parseInt(req.params.addressId, 10);
-    const updatedAddress = await addressService.setMainAddress(
-      userId,
-      addressId
-    );
-    res.status(200).json(updatedAddress);
-  } catch (error: any) {
+    console.error("Error in createAddress controller:", error.message);
     res.status(400).json({ error: error.message });
   }
 };
 
 export const updateAddressController = async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as IUserPayload).id;
-    const addressId = parseInt(req.params.addressId, 10);
-    const updatedAddress = await addressService.updateAddress(
-      userId,
-      addressId,
-      req.body
-    );
+    const userId = (req.user as any).id;
+    const addressId = parseInt(req.params.id, 10);
+    const addressData: Partial<IAddress> = req.body;
+    const updatedAddress = await updateAddress(userId, addressId, addressData);
     res.status(200).json(updatedAddress);
   } catch (error: any) {
-    res.status(400).json({ error: error.message });
+    res.status(500).json({ error: error.message });
   }
 };
 
 export const deleteAddressController = async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as IUserPayload).id;
-    const addressId = parseInt(req.params.addressId, 10);
-    await addressService.deleteAddress(userId, addressId);
-    res.status(204).send();
+    const userId = (req.user as any).id;
+    const addressId = parseInt(req.params.id, 10);
+    const result = await deleteAddress(userId, addressId);
+    res.status(200).json(result);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
   }

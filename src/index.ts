@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import cors from 'cors';
 import './interfaces/IUserPayload';
 import path from "path";
+import { handleMidtransNotificationController } from "./controllers/order.controller";
 
 
 import { initScheduledJobs } from './cron/scheduler';
@@ -18,11 +19,14 @@ import OAuthRoutes from "./routers/OAuth";
 import storeRoutes from "./routers/store";
 import userRoutes from "./routers/userRoute";
 import AdminOrderRouters from './routers/admin/admin.order.router';
+import AdminDashboardRouter from './routers/admin/dashboard.admin.router';
 import CategoryRouters from "./routers/category.router";
 import ProductRouters from "./routers/product.router";
 import InventoryRouters from "./routers/inventory.router";
 import addressRoutes from "./routers/address.router";
 import shippingRoutes from "./routers/shipping.router";
+
+
 
 
 
@@ -52,6 +56,7 @@ app.get(
 
 app.use("/super-admin", SuperAdminRouter);
 app.use('/api/admin/orders', AdminOrderRouters);
+app.use('/api/admin/dashboard', AdminDashboardRouter);
 app.use("/discount", DiscountRouter);
 app.use('/cart', CartRouters);
 app.use('/api/orders', OrderRouters);
@@ -64,6 +69,10 @@ app.use("/product", ProductRouters);
 app.use("/inventory", InventoryRouters);
 app.use("/api/addresses", addressRoutes);
 app.use("/api/shipping", shippingRoutes);
+app.post('/api/payments/midtrans-notification', handleMidtransNotificationController);
+
+
+
 
 app.listen(port, () => {
   console.log(`Server started on port ${port}`);

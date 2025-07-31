@@ -40,7 +40,6 @@ export const getProductsForStoreAdmin = async (
         const { page = 1, limit = 10, search, category } = filters;
         const skip = (page - 1) * limit;
 
-        // Langkah 1 & 2: Cari semua toko yang di-assign ke admin ini
         const assignments = await prisma.storeAdminAssignment.findMany({
             where: { userId: adminUser.id },
             select: { storeId: true },
@@ -48,7 +47,6 @@ export const getProductsForStoreAdmin = async (
 
         const assignedStoreIds = assignments.map(a => a.storeId);
 
-        // Jika admin tidak ditugaskan di toko manapun, kembalikan hasil kosong
         if (assignedStoreIds.length === 0) {
             return {
                 data: [],
@@ -56,9 +54,7 @@ export const getProductsForStoreAdmin = async (
             };
         }
 
-        // Langkah 3: Buat kondisi query untuk mengambil produk
         const whereClause: Prisma.ProductWhereInput = {
-            // Kondisi utama: produk harus punya stok di salah satu toko milik admin
             stocks: {
                 some: {
                     storeId: {
@@ -68,7 +64,6 @@ export const getProductsForStoreAdmin = async (
             },
         };
 
-        // Tambahkan filter pencarian dan kategori jika ada
         if (search) {
             whereClause.name = {
                 contains: search,
@@ -79,13 +74,12 @@ export const getProductsForStoreAdmin = async (
             whereClause.categoryId = parseInt(category, 10);
         }
 
-        // Lakukan query ke database
+
         const products = await prisma.product.findMany({
             where: whereClause,
             include: {
                 category: true,
                 images: true,
-                // Kita juga bisa sertakan info stok khusus untuk toko admin
                 stocks: {
                     where: {
                         storeId: {
@@ -188,8 +182,8 @@ export const updateProduct = async (
     basePrice: number;
     categoryId: number;
   }>,
-  imagesToDelete: string[], // Array of imageUrl strings to delete
-  files?: Express.Multer.File[] // New files being uploaded
+  imagesToDelete: string[], 
+  files?: Express.Multer.File[] 
 ) => {
   try {
     // Remove images from Cloudinary
@@ -210,7 +204,7 @@ export const updateProduct = async (
       }
     }
 
-    // Upload new images to Cloudinary
+ 
     const newImageRecords: { imageUrl: string }[] = [];
     if (files && files.length > 0) {
       for (const file of files) {

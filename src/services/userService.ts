@@ -24,12 +24,10 @@ export async function getProfileService(userPayLoad: IUserPayload) {
     profilePicture: user.profilePicture,
     referralCode: user.referralCode,
     isVerified: user.isVerified,
-    hashPassword: !!user.password,
     role: user.role,
-
+    hashPassword: !!user.password,
+    provider: user.provider,
   };
-
-  return user;
 }
 export async function updateProfileService(
   userId: number,
