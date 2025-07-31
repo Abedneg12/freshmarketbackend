@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import cors from 'cors';
 import './interfaces/IUserPayload';
 import path from "path";
+import { handleMidtransNotificationController } from "./controllers/order.controller";
 
 
 import { initScheduledJobs } from './cron/scheduler';
@@ -24,6 +25,8 @@ import ProductRouters from "./routers/product.router";
 import InventoryRouters from "./routers/inventory.router";
 import addressRoutes from "./routers/address.router";
 import shippingRoutes from "./routers/shipping.router";
+
+
 
 
 
@@ -66,6 +69,10 @@ app.use("/product", ProductRouters);
 app.use("/inventory", InventoryRouters);
 app.use("/api/addresses", addressRoutes);
 app.use("/api/shipping", shippingRoutes);
+app.post('/api/payments/midtrans-notification', handleMidtransNotificationController);
+
+
+
 
 app.listen(port, () => {
   console.log(`Server started on port ${port}`);
