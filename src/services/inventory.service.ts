@@ -1,3 +1,4 @@
+import e from "express";
 import prisma from "../lib/prisma";
 
 interface InventoryJournalEntry {
@@ -82,6 +83,24 @@ export const updateProductStock = async (
         console.error("Error adding product to store:", error.message);
         throw new Error(
             `Could not add product to store: ${error.message}`
+        );
+    }
+};
+
+export const getInventoryJournal = async (
+) => {
+    try {
+        const inventoryJournal = await prisma.inventoryJournal.findMany({
+            include: {
+                product: { include: { images: true } },
+                store: true,
+            }
+        });
+        return inventoryJournal;
+    } catch (error: any) {
+        console.error("Error fetching inventory journal:", error.message);
+        throw new Error(
+            `Error fetching inventory journal: ${error.message}`
         );
     }
 };
