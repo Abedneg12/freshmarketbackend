@@ -1,0 +1,12 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const stocks_reports_controller_1 = require("../controllers/stocks.reports.controller");
+const authOnlyMiddleware_1 = require("../middlewares/authOnlyMiddleware");
+const roleMiddleware_1 = require("../middlewares/roleMiddleware");
+const client_1 = require("@prisma/client");
+const router = (0, express_1.Router)();
+router.use([authOnlyMiddleware_1.authOnlyMiddleware, (0, roleMiddleware_1.requireRole)([client_1.UserRole.SUPER_ADMIN, client_1.UserRole.STORE_ADMIN])]);
+router.get('/monthly-stock-summary', stocks_reports_controller_1.getMonthlyStockSummaryReportController);
+router.get('/monthly-stock-detail', stocks_reports_controller_1.getMonthlyStockDetailReportController);
+exports.default = router;

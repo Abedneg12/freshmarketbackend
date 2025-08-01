@@ -1,0 +1,16 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const store_controller_1 = require("../controllers/store.controller");
+const validationMiddleware_1 = require("../middlewares/validationMiddleware");
+const store_validation_1 = require("../validations/store.validation");
+const authOnlyMiddleware_1 = require("../middlewares/authOnlyMiddleware");
+const roleMiddleware_1 = require("../middlewares/roleMiddleware");
+const client_1 = require("@prisma/client");
+const router = (0, express_1.Router)();
+router.use(authOnlyMiddleware_1.authOnlyMiddleware, (0, roleMiddleware_1.requireRole)([client_1.UserRole.SUPER_ADMIN]));
+router.get("/", store_controller_1.getAllStoresController);
+router.post("/", (0, validationMiddleware_1.validateBody)(store_validation_1.storeSchema), store_controller_1.createStoreController);
+router.put("/:storeId", (0, validationMiddleware_1.validateBody)(store_validation_1.storeSchema), store_controller_1.updateStoreController);
+router.delete("/:storeId", store_controller_1.deleteStoreController);
+exports.default = router;

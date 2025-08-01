@@ -1,0 +1,22 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const product_controller_1 = require("../controllers/product.controller");
+const validationMiddleware_1 = require("../middlewares/validationMiddleware");
+const authOnlyMiddleware_1 = require("../middlewares/authOnlyMiddleware");
+const roleMiddleware_1 = require("../middlewares/roleMiddleware");
+const multer_1 = require("../utils/multer");
+const express_1 = __importDefault(require("express"));
+const product_validation_1 = require("../validations/product.validation");
+const client_1 = require("@prisma/client");
+const router = express_1.default.Router();
+const upload = (0, multer_1.Multer)("memoryStorage", "product-", "products");
+router.post("/", upload.array("images"), (0, validationMiddleware_1.validateBody)(product_validation_1.productCreateSchema), authOnlyMiddleware_1.authOnlyMiddleware, (0, roleMiddleware_1.requireRole)([client_1.UserRole.SUPER_ADMIN]), product_controller_1.createProductController);
+router.get("/", product_controller_1.getAllProductsController);
+router.get('/katalog', authOnlyMiddleware_1.authOnlyMiddleware, (0, roleMiddleware_1.requireRole)([client_1.UserRole.STORE_ADMIN]), product_controller_1.getProductsStoreAdminController);
+router.get("/:productId", product_controller_1.getProductByIdController);
+router.put("/:productId", authOnlyMiddleware_1.authOnlyMiddleware, (0, roleMiddleware_1.requireRole)([client_1.UserRole.SUPER_ADMIN]), upload.array("images"), (0, validationMiddleware_1.validateBody)(product_validation_1.productUpdateSchema), product_controller_1.updateProductController);
+router.delete("/:productId", authOnlyMiddleware_1.authOnlyMiddleware, (0, roleMiddleware_1.requireRole)([client_1.UserRole.SUPER_ADMIN]), product_controller_1.deleteProductController);
+exports.default = router;

@@ -1,0 +1,15 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const userController_1 = require("../controllers/userController");
+const authOnlyMiddleware_1 = require("../middlewares/authOnlyMiddleware");
+const multer_1 = require("../utils/multer");
+const router = (0, express_1.Router)();
+router.get("/confirm-email-update", userController_1.confirmEmailUpdateController);
+router.get("/profile", authOnlyMiddleware_1.authOnlyMiddleware, userController_1.getProfileController);
+router.patch("/profile", authOnlyMiddleware_1.authOnlyMiddleware, userController_1.updateProfileController);
+router.patch("/change-password", authOnlyMiddleware_1.authOnlyMiddleware, userController_1.changePasswordController);
+router.patch("/profile/picture", authOnlyMiddleware_1.authOnlyMiddleware, (0, multer_1.Multer)("memoryStorage").single("file"), userController_1.updateProfilePictureController);
+router.post("/request-email-update", authOnlyMiddleware_1.authOnlyMiddleware, userController_1.requestEmailUpdateController);
+router.post("/create-password", authOnlyMiddleware_1.authOnlyMiddleware, userController_1.createPasswordController);
+exports.default = router;

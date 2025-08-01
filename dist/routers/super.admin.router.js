@@ -1,0 +1,21 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = __importDefault(require("express"));
+const super_admin_controller_1 = require("../controllers/super.admin.controller");
+const roleMiddleware_1 = require("../middlewares/roleMiddleware");
+const authOnlyMiddleware_1 = require("../middlewares/authOnlyMiddleware");
+const validationMiddleware_1 = require("../middlewares/validationMiddleware");
+const super_admin_validation_1 = require("../validations/super.admin.validation");
+const client_1 = require("@prisma/client");
+const router = express_1.default.Router();
+router.use(authOnlyMiddleware_1.authOnlyMiddleware, (0, roleMiddleware_1.requireRole)([client_1.UserRole.SUPER_ADMIN]));
+router.get("/users", super_admin_controller_1.getAllUsersController);
+router.post("/store-admins", (0, validationMiddleware_1.validateBody)(super_admin_validation_1.registerStoreAdminSchema), super_admin_controller_1.createStoreAdminController);
+router.post("/stores/:storeId/admins", super_admin_controller_1.assignStoreAdminController);
+router.delete("/store-admins/:userId", super_admin_controller_1.deleteStoreAdminController);
+router.put("/store-admins/:userId", super_admin_controller_1.updateStoreAdminController);
+router.put("/store-admins/:userId/assign", super_admin_controller_1.updateStoreAdminAssigmentController);
+exports.default = router;

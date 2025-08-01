@@ -1,0 +1,21 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = __importDefault(require("express"));
+const disocunt_controller_1 = require("../controllers/disocunt.controller");
+const roleMiddleware_1 = require("../middlewares/roleMiddleware");
+const verifiedOnlyMiddleware_1 = require("../middlewares/verifiedOnlyMiddleware");
+const client_1 = require("@prisma/client");
+const validationMiddleware_1 = require("../middlewares/validationMiddleware");
+const discount_validation_1 = require("../validations/discount.validation");
+const authOnlyMiddleware_1 = require("../middlewares/authOnlyMiddleware");
+const router = express_1.default.Router();
+router.use(authOnlyMiddleware_1.authOnlyMiddleware, (0, roleMiddleware_1.requireRole)([client_1.UserRole.STORE_ADMIN]));
+router.post("/", (0, validationMiddleware_1.validateBody)(discount_validation_1.createDiscountServiceSchema), disocunt_controller_1.createDiscountController);
+router.get("/", disocunt_controller_1.getAllDiscountsController);
+router.put("/:discountId", disocunt_controller_1.updateDiscountController);
+router.delete("/:discountId", disocunt_controller_1.deleteDiscountController);
+router.get("/store/:storeId", verifiedOnlyMiddleware_1.verifiedOnlyMiddleware, disocunt_controller_1.getDiscountByStoreIdController);
+exports.default = router;

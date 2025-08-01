@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const authOnlyMiddleware_1 = require("../../middlewares/authOnlyMiddleware");
+const roleMiddleware_1 = require("../../middlewares/roleMiddleware");
+const storeadmin_controller_1 = require("../../controllers/admin/storeadmin.controller");
+const router = (0, express_1.Router)();
+router.use(authOnlyMiddleware_1.authOnlyMiddleware, (0, roleMiddleware_1.requireRole)(['STORE_ADMIN', 'SUPER_ADMIN']));
+router.get('/summary', storeadmin_controller_1.getDashboardSummaryController);
+router.get('/recent-activity', storeadmin_controller_1.getRecentActivityController);
+exports.default = router;
