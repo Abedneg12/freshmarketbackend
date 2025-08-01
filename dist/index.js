@@ -41,8 +41,6 @@ app.use(passport_1.default.initialize());
 app.get("/api", (req, res, next) => {
     console.log("test masuk");
     next();
-}, (req, res, next) => {
-    res.status(200).send("ini API event_management kita");
 });
 app.use("/super-admin", super_admin_router_1.default);
 app.use('/api/admin/orders', admin_order_router_1.default);
@@ -62,7 +60,7 @@ app.use("/api/shipping", shipping_router_1.default);
 app.use("/stocks", stocks_reports_router_1.default);
 app.use("/sales", sales_report_router_1.default);
 app.use("/api/management/stores", store_management_router_1.default);
-app.post('/api/payments/midtrans-notification', order_controller_1.handleMidtransNotificationController);
+app.post("/api/payments/midtrans-notification", order_controller_1.handleMidtransNotificationController);
 app.listen(port, () => {
     console.log(`Server started on port ${port}`);
     (0, scheduler_1.initScheduledJobs)();
