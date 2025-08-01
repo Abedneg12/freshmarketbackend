@@ -1,8 +1,19 @@
 import prisma from "../lib/prisma";
-import { geocodeAddress } from "../utils/geocode";
 
-export const getAllStores = async () => {
-  return prisma.store.findMany({
+interface StorePayload {
+  name: string;
+  address: string;
+  city: string;
+  latitude: number;
+  longitude: number;
+}
+
+export const getAllStores = async (page: number, limit: number) => {
+  const skip = (page - 1) * limit;
+
+  const stores = await prisma.store.findMany({
+    skip: skip,
+    take: limit,
     include: {
       admins: {
         select: {
@@ -14,33 +25,36 @@ export const getAllStores = async () => {
     },
     orderBy: { id: "asc" },
   });
+
+  const totalStores = await prisma.store.count();
+
+  return { stores, totalStores };
 };
 
-export const createStore = async (data: { name: string; address: string }) => {
-  const { lat, lng } = await geocodeAddress(data.address);
+export const createStore = async (data: StorePayload) => {
   return prisma.store.create({
     data: {
       name: data.name,
       address: data.address,
-      latitude: lat,
-      longitude: lng,
+      city: data.city,
+      latitude: data.latitude,
+      longitude: data.longitude,
     },
   });
 };
 
 export const updateStore = async (
   storeId: number,
-  data: { name: string; address: string }
+  data: Partial<StorePayload>
 ) => {
-  const { lat, lng } = await geocodeAddress(data.address);
-
   return prisma.store.update({
     where: { id: storeId },
     data: {
       name: data.name,
       address: data.address,
-      latitude: lat,
-      longitude: lng,
+      city: data.city,
+      latitude: data.latitude,
+      longitude: data.longitude,
     },
   });
 };
