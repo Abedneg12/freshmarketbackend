@@ -1,8 +1,16 @@
 import prisma from "../lib/prisma";
-import { Discount, DiscountType} from "../interfaces/discount.type";
+import { Discount, DiscountType } from "../interfaces/discount.type";
+import { IUserPayload } from "../interfaces/IUserPayload";
+import { getAccessibleStoreIds } from "../utils/access.util";
 
-export const createDiscountService = async (discount: Discount & { type: DiscountType }) => {
-    const { type, productId, storeId, value, minPurchase, maxDiscount, startDate, endDate } = discount;
+export const createDiscountService = async (discount: Discount & { type: DiscountType }, adminUser: IUserPayload) => {
+    const { type, productId, value, minPurchase, maxDiscount, startDate, endDate } = discount;
+    const assignments = await prisma.storeAdminAssignment.findMany({
+            where: { userId: adminUser.id },
+            select: { storeId: true },
+        });
+    const assignedStoreIds = assignments.map(a => a.storeId);
+    const storeId = assignedStoreIds[0];
 
     // Validation logic
     if (type === "BUY1GET1") {
@@ -45,14 +53,17 @@ export const createDiscountService = async (discount: Discount & { type: Discoun
             data.maxDiscount = maxDiscount;
         }
     }
-
-    // BOGO does not need value, minPurchase, maxDiscount
-
     return await prisma.discount.create({ data });
 };
 
-export const getAllDiscountsService = async () => {
-    return await prisma.discount.findMany({});
+export const getAllDiscountsService = async (adminUser: IUserPayload) => {
+    const accessibleStoreIds = await getAccessibleStoreIds(adminUser)
+    return await prisma.discount.findMany({
+        where: { storeId: { in: accessibleStoreIds } },
+        include: {
+            product: true,
+        },
+    });
 };
 
 export const deleteDiscountService = async (discountId: number) => {

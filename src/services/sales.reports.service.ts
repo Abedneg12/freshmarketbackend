@@ -1,32 +1,8 @@
-import { OrderStatus, Prisma, UserRole } from '@prisma/client';
+import { OrderStatus, Prisma } from '@prisma/client';
 import { IUserPayload } from '../interfaces/IUserPayload';
 import prisma from '../lib/prisma';
-import { IAdminOrderFilter, TPaymentDecision } from '../interfaces/admin.interface';
+import { getAccessibleStoreIds } from '../utils/access.util';
 
-// ... (existing getOrdersForAdmin, confirmPayment, shipOrder services) ...
-
-// Helper function to get store IDs for an admin
-async function getAccessibleStoreIds(adminUser: IUserPayload, requestedStoreId?: number): Promise<number[] | undefined> {
-  if (adminUser.role === UserRole.SUPER_ADMIN) {
-    // Super admin can see all stores or a specific requested store
-    return requestedStoreId ? [requestedStoreId] : undefined; // undefined means all stores
-  } else if (adminUser.role === UserRole.STORE_ADMIN) {
-    const assignments = await prisma.storeAdminAssignment.findMany({
-      where: { userId: adminUser.id },
-      select: { storeId: true },
-    });
-    const assignedStoreIds = assignments.map(a => a.storeId);
-
-    if (requestedStoreId && !assignedStoreIds.includes(requestedStoreId)) {
-      // Store admin requested a store they don't have access to
-      throw new Error('Forbidden: Anda tidak memiliki akses ke toko ini.');
-    }
-    return assignedStoreIds.length > 0 ? assignedStoreIds : [0]; // Return [0] to ensure no data if no assignments
-  }
-  return [0]; // Default to no access
-}
-
-// Laporan Penjualan per Bulan
 export const getMonthlySalesReport = async (
   adminUser: IUserPayload,
   year: number,
@@ -36,11 +12,11 @@ export const getMonthlySalesReport = async (
 
   const whereClause: Prisma.OrderWhereInput = {
     createdAt: {
-      gte: new Date(year, 0, 1), // Start of the year
-      lt: new Date(year + 1, 0, 1), // Start of next year
+      gte: new Date(year, 0, 1),
+      lt: new Date(year + 1, 0, 1), 
     },
     status: {
-      in: [OrderStatus.CONFIRMED, OrderStatus.SHIPPED, OrderStatus.PROCESSED], // Consider only successful orders
+      in: [OrderStatus.CONFIRMED, OrderStatus.SHIPPED, OrderStatus.PROCESSED],
     },
   };
 
@@ -58,11 +34,6 @@ export const getMonthlySalesReport = async (
       storeId: 'asc',
     },
   });
-
-  // To get sales per month, we need to query OrderItem and group by month
-  // Prisma's groupBy currently doesn't support grouping by date parts directly in this way for aggregation.
-  // We'll fetch all relevant orders and process in-memory for monthly grouping.
-  // For large datasets, consider a database view or a more advanced aggregation tool.
 
   const allOrders = await prisma.order.findMany({
     where: whereClause,
@@ -100,7 +71,6 @@ export const getMonthlySalesReport = async (
   return monthlySales;
 };
 
-// Laporan Penjualan per Bulan berdasarkan Kategori Produk
 export const getMonthlySalesByCategoryReport = async (
   adminUser: IUserPayload,
   year: number,
@@ -124,7 +94,7 @@ export const getMonthlySalesByCategoryReport = async (
 
   const orderItems = await prisma.orderItem.findMany({
     where: {
-      order: whereClause, // Filter order items based on order criteria
+      order: whereClause, 
     },
     include: {
       product: {
@@ -168,14 +138,13 @@ export const getMonthlySalesByCategoryReport = async (
         name,
         totalSales: data.totalSales,
         quantitySold: data.quantitySold,
-      })).sort((a, b) => b.totalSales - a.totalSales), // Sort categories by sales
+      })).sort((a, b) => b.totalSales - a.totalSales), 
     }))
     .sort((a, b) => a.monthYear.localeCompare(b.monthYear));
 
   return monthlyCategorySales;
 };
 
-// Laporan Penjualan per Bulan berdasarkan Produk
 export const getMonthlySalesByProductReport = async (
   adminUser: IUserPayload,
   year: number,
@@ -244,7 +213,7 @@ export const getMonthlySalesByProductReport = async (
         name,
         totalSales: data.totalSales,
         quantitySold: data.quantitySold,
-      })).sort((a, b) => b.totalSales - a.totalSales), // Sort products by sales
+      })).sort((a, b) => b.totalSales - a.totalSales),
     }))
     .sort((a, b) => a.monthYear.localeCompare(b.monthYear));
 

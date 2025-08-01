@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { updateProductStock } from "../services/inventory.service";
+import { updateProductStock, getInventoryJournal } from "../services/inventory.service";
 
 export const updateProductStockController = async (
   req: Request,
@@ -42,3 +42,25 @@ export const updateProductStockController = async (
     next(error);
   }
 };
+
+export const getInventoryJournalController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const inventoryData = await getInventoryJournal();
+    res.status(200).json(inventoryData);
+  } catch (error: any) {
+    console.error("Error getting inventory journal :", error);
+
+    if (error.message.includes("not found") || error.message.includes("Invalid input")) {
+      res.status(400).json({ message: error.message });
+    } else {
+      res
+        .status(500)
+        .json({ message: "Failed to get inventory journal", error: error.message });
+    }
+    next(error);
+  }
+}
