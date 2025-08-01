@@ -51,9 +51,6 @@ app.get(
     console.log("test masuk");
     next()
   },
-  (req: Request, res: Response, next: NextFunction) => {
-    res.status(200).send("ini API event_management kita");
-  }
 );
 
 
