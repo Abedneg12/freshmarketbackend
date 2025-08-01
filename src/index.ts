@@ -4,7 +4,7 @@ import { FE_PORT, PORT } from "./config"
 import helmet from 'helmet';
 import cors from 'cors';
 import './interfaces/IUserPayload';
-import path from "path";
+
 import { handleMidtransNotificationController } from "./controllers/order.controller";
 
 
