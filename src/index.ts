@@ -27,7 +27,7 @@ import addressRoutes from "./routers/address.router";
 import shippingRoutes from "./routers/shipping.router";
 import StockReportRouter from "./routers/stocks.reports.router";
 import SalesReportRouter from "./routers/sales.report.router";
-
+import storeManagementRouter from "./routers/store.management.router";
 
 
 
@@ -74,6 +74,7 @@ app.use("/api/addresses", addressRoutes);
 app.use("/api/shipping", shippingRoutes);
 app.use("/stocks", StockReportRouter);
 app.use("/sales", SalesReportRouter);
+app.use("/api/management/stores", storeManagementRouter);
 app.post('/api/payments/midtrans-notification', handleMidtransNotificationController);
 
 
