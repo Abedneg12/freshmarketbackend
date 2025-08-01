@@ -5,7 +5,7 @@ import { createDiscountService, deleteDiscountService, getAllDiscountsService, u
 export const createDiscountController = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const discount: Discount & { type: DiscountType } = req.body;
     try {
-        const result = await createDiscountService(discount);
+        const result = await createDiscountService(discount, req.user!);
         res.status(201).json(result);
     } catch (error) {
         console.error("Error creating discount:", error);
@@ -16,7 +16,7 @@ export const createDiscountController = async (req: Request, res: Response, next
 
 export const getAllDiscountsController = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        const discounts = await getAllDiscountsService();
+        const discounts = await getAllDiscountsService(req.user!);
         res.status(200).json(discounts);
     } catch (error) {
         console.error("Error fetching discounts:", error);

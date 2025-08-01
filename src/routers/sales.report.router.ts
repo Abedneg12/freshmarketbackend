@@ -1,5 +1,3 @@
-// src/routers/admin/admin.order.router.ts
-
 import { Router } from 'express';
 import { getMonthlySalesReportController, getMonthlySalesByCategoryReportController, getMonthlySalesByProductReportController } from '../controllers/sales.report.controller';
 import { authOnlyMiddleware } from '../middlewares/authOnlyMiddleware';

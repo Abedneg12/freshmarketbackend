@@ -1,9 +1,6 @@
-// src/controllers/admin/admin.order.controller.ts
-
 import { Request, Response } from 'express';
-import { getMonthlySalesReport, getMonthlySalesByCategoryReport, getMonthlySalesByProductReport } from '../services/sales.report.service';
-import { OrderStatus } from '@prisma/client';
-import { TPaymentDecision } from '../interfaces/admin.interface';
+import { getMonthlySalesReport, getMonthlySalesByCategoryReport, getMonthlySalesByProductReport } from '../services/sales.reports.service';
+
 export const getMonthlySalesReportController = async (req: Request, res: Response): Promise<void> => {
     const adminUser = req.user;
     if (!adminUser) {
@@ -16,10 +13,7 @@ export const getMonthlySalesReportController = async (req: Request, res: Respons
 
     try {
         const report = await getMonthlySalesReport(adminUser, year, storeId);
-        res.status(200).json({
-            message: 'Laporan penjualan bulanan berhasil diambil',
-            data: report,
-        });
+        res.status(200).json(report);
     } catch (error: any) {
         console.error("Error fetching monthly sales report:", error);
         if (error.message.includes('Forbidden')) {
@@ -42,10 +36,7 @@ export const getMonthlySalesByCategoryReportController = async (req: Request, re
 
     try {
         const report = await getMonthlySalesByCategoryReport(adminUser, year, storeId);
-        res.status(200).json({
-            message: 'Laporan penjualan bulanan berdasarkan kategori berhasil diambil',
-            data: report,
-        });
+        res.status(200).json(report);
     } catch (error: any) {
         console.error("Error fetching monthly sales by category report:", error);
         if (error.message.includes('Forbidden')) {
@@ -68,10 +59,7 @@ export const getMonthlySalesByProductReportController = async (req: Request, res
 
     try {
         const report = await getMonthlySalesByProductReport(adminUser, year, storeId);
-        res.status(200).json({
-            message: 'Laporan penjualan bulanan berdasarkan produk berhasil diambil',
-            data: report,
-        });
+        res.status(200).json(report);
     } catch (error: any) {
         console.error("Error fetching monthly sales by product report:", error);
         if (error.message.includes('Forbidden')) {
