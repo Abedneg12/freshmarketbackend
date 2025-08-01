@@ -75,7 +75,7 @@ app.use("/api/shipping", shippingRoutes);
 app.use("/stocks", StockReportRouter);
 app.use("/sales", SalesReportRouter);
 app.use("/api/management/stores", storeManagementRouter);
-app.post('/api/payments/midtrans-notification', handleMidtransNotificationController);
+app.post("/api/payments/midtrans-notification", handleMidtransNotificationController);
 
 
 
