@@ -6,9 +6,9 @@ import { getAccessibleStoreIds } from "../utils/access.util";
 export const createDiscountService = async (discount: Discount & { type: DiscountType }, adminUser: IUserPayload) => {
     const { type, productId, value, minPurchase, maxDiscount, startDate, endDate } = discount;
     const assignments = await prisma.storeAdminAssignment.findMany({
-            where: { userId: adminUser.id },
-            select: { storeId: true },
-        });
+        where: { userId: adminUser.id },
+        select: { storeId: true },
+    });
     const assignedStoreIds = assignments.map(a => a.storeId);
     const storeId = assignedStoreIds[0];
 
@@ -93,4 +93,19 @@ export const updateDiscountService = async (discountId: number, data: Partial<Di
             endDate: data.endDate ? new Date(data.endDate) : discount.endDate,
         },
     });
+};
+
+export const getDiscountByStoreId = async (adminUser: IUserPayload) => {
+    const accessibleStoreIds = await getAccessibleStoreIds(adminUser);
+    const discounts = await prisma.discount.findMany({
+        where: {
+            storeId: {
+                in: accessibleStoreIds,
+            }
+        },
+        include: {
+            product: true,
+        },
+    });
+    return discounts;
 };

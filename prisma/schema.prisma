@@ -26,7 +26,7 @@ model User {
   orderStatusLogs      OrderStatusLog[]       @relation("ChangedBy")
   wasReferredLogs      ReferralLog[]          @relation("ReferredLogs")
   referralLogs         ReferralLog[]          @relation("ReferrerLogs")
-  StoreAdminAssignment StoreAdminAssignment[]
+  StoreAdminAssignment StoreAdminAssignment?
   referredBy           User?                  @relation("UserReferrer", fields: [referredById], references: [id])
   referredUsers        User[]                 @relation("UserReferrer")
   userVouchers         UserVoucher[]
@@ -52,7 +52,7 @@ model Store {
 
 model StoreAdminAssignment {
   id      Int   @id @default(autoincrement())
-  userId  Int
+  userId  Int   @unique
   storeId Int
   store   Store @relation(fields: [storeId], references: [id])
   user    User  @relation(fields: [userId], references: [id])
