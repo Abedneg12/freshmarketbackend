@@ -47,9 +47,10 @@ export const createStoreAdmin = async (
     email: string,
     fullName: string,
     password: string,
-    storeIds: number[]
+    storeId: number
 ) => {
     try {
+        console.log("Creating store admin with email:", email, "and storeId:", storeId);
         const existingUser = await prisma.user.findUnique({
             where: { email },
         });
@@ -68,27 +69,18 @@ export const createStoreAdmin = async (
                 },
             });
 
-            if (storeIds && storeIds.length > 0) {
-                const existingStores = await t.store.findMany({
-                    where: { id: { in: storeIds } },
-                    select: { id: true }
-                });
-                const existingStoreIds = new Set(existingStores.map(s => s.id));
+            const store = await t.store.findUnique({
+                where: { id: storeId },
+            });
+            if (!store) throw new Error("Store not found");
 
-                const assignmentsData = storeIds
-                    .filter(storeId => existingStoreIds.has(storeId))
-                    .map(storeId => ({
-                        userId: newUser.id,
-                        storeId: storeId,
-                    }));
+            await t.storeAdminAssignment.create({
+                data: {
+                    userId: newUser.id,
+                    storeId,
+                },
+            });
 
-                if (assignmentsData.length > 0) {
-                    await t.storeAdminAssignment.createMany({
-                        data: assignmentsData,
-                        skipDuplicates: true,
-                    });
-                }
-            }
             return newUser;
         });
     } catch (err: any) {
@@ -104,9 +96,9 @@ export const assignStoreAdmin = async (userId: number, storeId: number) => {
         const store = await prisma.store.findUnique({ where: { id: storeId } });
         if (!store) throw new Error("Store not found");
         const existing = await prisma.storeAdminAssignment.findFirst({
-            where: { userId, storeId },
+            where: { userId },
         });
-        if (existing) throw new Error("User is already assigned to this store");
+        if (existing) throw new Error("User already assigned to a store");
         return await prisma.$transaction(async (t: any) => {
             await t.user.update({
                 where: { id: userId },
@@ -159,78 +151,73 @@ export const updateStoreAdminAssigment = async (userId: number, storeId: number)
 export const updateStoreAdmin = async (
     userId: number,
     data: Partial<{ email: string; fullName: string; password: string }>,
-    newStoreIds: number[]
+    storeId?: number
 ) => {
+    console.log("Updating store admin with data:", data, "and storeId:", storeId);
     try {
         const user = await prisma.user.findUnique({
             where: { id: userId },
             include: { StoreAdminAssignment: true },
         });
 
-        if (!user) {
-            throw new Error("User not found");
-        }
+        if (!user) throw new Error("User not found");
 
         const updatedUserData: any = {};
+        if (data.email) updatedUserData.email = data.email;
         if (data.fullName) updatedUserData.fullName = data.fullName;
         if (data.password) {
             updatedUserData.password = await bcrypt.hash(data.password, 10);
         }
 
         return await prisma.$transaction(async (t) => {
-            await t.user.update({
-                where: { id: userId },
-                data: updatedUserData,
-            });
-
-            const currentStoreIds = user.StoreAdminAssignment.map(a => a.storeId);
-            const storeIdsToAdd = newStoreIds.filter(id => !currentStoreIds.includes(id));
-            const storeIdsToRemove = currentStoreIds.filter(id => !newStoreIds.includes(id));
-
-            if (storeIdsToRemove.length > 0) {
-                await t.storeAdminAssignment.deleteMany({
-                    where: {
-                        userId: userId,
-                        storeId: { in: storeIdsToRemove },
-                    },
+            if (Object.keys(updatedUserData).length > 0) {
+                await t.user.update({
+                    where: { id: userId },
+                    data: updatedUserData,
                 });
             }
 
-            if (storeIdsToAdd.length > 0) {
-                const existingStores = await t.store.findMany({
-                    where: { id: { in: storeIdsToAdd } },
-                    select: { id: true }
+            if (storeId !== undefined && storeId !== null) {
+                const store = await t.store.findUnique({
+                    where: { id: storeId },
                 });
-                const existingStoreIds = new Set(existingStores.map(s => s.id));
+                if (!store) throw new Error("Store not found");
 
-                const assignmentsData = storeIdsToAdd
-                    .filter(storeId => existingStoreIds.has(storeId))
-                    .map(storeId => ({
-                        userId: userId,
-                        storeId: storeId,
-                    }));
+                if (user.StoreAdminAssignment) {
+                    await t.storeAdminAssignment.update({
+                        where: { userId: userId },
+                        data: { storeId: storeId },
+                    });
+                } else {
+                    await t.storeAdminAssignment.create({
+                        data: {
+                            userId,
+                            storeId,
+                        },
+                    });
+                }
 
-                if (assignmentsData.length > 0) {
-                    await t.storeAdminAssignment.createMany({
-                        data: assignmentsData,
-                        skipDuplicates: true,
+                if (user.role !== UserRole.STORE_ADMIN) {
+                    await t.user.update({
+                        where: { id: userId },
+                        data: { role: UserRole.STORE_ADMIN },
+                    });
+                }
+            } else {
+                if (user.StoreAdminAssignment) {
+                    await t.storeAdminAssignment.delete({
+                        where: { userId: userId },
+                    });
+                }
+                if (user.role === UserRole.STORE_ADMIN) {
+                    await t.user.update({
+                        where: { id: userId },
+                        data: { role: UserRole.USER },
                     });
                 }
             }
 
-            if (newStoreIds.length > 0 && user.role !== UserRole.STORE_ADMIN) {
-                await t.user.update({
-                    where: { id: userId },
-                    data: { role: UserRole.STORE_ADMIN },
-                });
-            } else if (newStoreIds.length === 0 && user.role === UserRole.STORE_ADMIN) {
-                await t.user.update({
-                    where: { id: userId },
-                    data: { role: UserRole.USER },
-                });
-            }
-
-            return t.user.findUnique({
+            return await t.user.findUnique({
                 where: { id: userId },
                 include: { StoreAdminAssignment: { include: { store: true } } },
             });
@@ -239,4 +226,4 @@ export const updateStoreAdmin = async (
         console.error("Error updating store admin:", err);
         throw new Error(err.message || "Failed to update store admin");
     }
-}
+};

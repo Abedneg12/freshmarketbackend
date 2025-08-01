@@ -23,12 +23,12 @@ model User {
   addresses            Address[]
   carts                Cart[]
   orders               Order[]
-  orderStatusLogs      OrderStatusLog[]      @relation("ChangedBy")
-  wasReferredLogs      ReferralLog[]         @relation("ReferredLogs")
-  referralLogs         ReferralLog[]         @relation("ReferrerLogs")
+  orderStatusLogs      OrderStatusLog[]       @relation("ChangedBy")
+  wasReferredLogs      ReferralLog[]          @relation("ReferredLogs")
+  referralLogs         ReferralLog[]          @relation("ReferrerLogs")
   StoreAdminAssignment StoreAdminAssignment?
-  referredBy           User?                 @relation("UserReferrer", fields: [referredById], references: [id])
-  referredUsers        User[]                @relation("UserReferrer")
+  referredBy           User?                  @relation("UserReferrer", fields: [referredById], references: [id])
+  referredUsers        User[]                 @relation("UserReferrer")
   userVouchers         UserVoucher[]
   voucherUsageLogs     VoucherUsageLog[]
 }

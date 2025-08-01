@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { Discount, DiscountType } from "../interfaces/discount.type";
-import { createDiscountService, deleteDiscountService, getAllDiscountsService, updateDiscountService } from "../services/discount.service";
+import { createDiscountService, deleteDiscountService, getAllDiscountsService, updateDiscountService, getDiscountByStoreId } from "../services/discount.service";
 
 export const createDiscountController = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const discount: Discount & { type: DiscountType } = req.body;
@@ -49,3 +49,14 @@ export const deleteDiscountController = async (req: Request, res: Response, next
         next(error);
     }
 };
+
+export const getDiscountByStoreIdController = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const discounts = await getDiscountByStoreId(req.user!);
+        res.status(200).json(discounts);
+    } catch (error) {
+        console.error("Error fetching discounts by store ID:", error);
+        res.status(500).json({ message: "Failed to fetch discounts" });
+        next(error);
+    }
+}

@@ -1,5 +1,5 @@
 import express from 'express';
-import { createDiscountController, getAllDiscountsController, deleteDiscountController, updateDiscountController } from "../controllers/disocunt.controller";
+import { createDiscountController, getAllDiscountsController, deleteDiscountController, updateDiscountController, getDiscountByStoreIdController } from "../controllers/disocunt.controller";
 import { requireRole } from "../middlewares/roleMiddleware";
 import { verifiedOnlyMiddleware } from '../middlewares/verifiedOnlyMiddleware';
 import { UserRole } from '@prisma/client';
@@ -15,5 +15,6 @@ router.post("/", validateBody(createDiscountServiceSchema), createDiscountContro
 router.get("/", getAllDiscountsController);
 router.put("/:discountId", updateDiscountController);
 router.delete("/:discountId", deleteDiscountController);
+router.get("/store/:storeId", verifiedOnlyMiddleware, getDiscountByStoreIdController);
 
 export default router;
