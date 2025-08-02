@@ -107,6 +107,10 @@ export async function getStoreProducts(storeId: number) {
             include: {
               images: true,
               category: true,
+              discounts: {
+                where: {storeId :storeId},
+              },
+              stocks: true,
             },
           },
         },
@@ -119,11 +123,15 @@ export async function getStoreProducts(storeId: number) {
   const products = store.products.map((item) => ({
     id: item.product.id,
     name: item.product.name,
+    description: item.product.description,
     basePrice: item.product.basePrice,
-    category: item.product.category,
     price: item.product.basePrice,
+    category: item.product.category,
+    categoryId: item.product.categoryId,
+    createdAt: item.product.createdAt,
     images: item.product.images,
-    stock: item.quantity,
+    stocks: item.product.stocks,
+    discounts: item.product.discounts,
   }));
 
   return {
