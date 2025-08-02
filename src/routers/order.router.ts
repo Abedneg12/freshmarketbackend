@@ -7,7 +7,8 @@ import {
     uploadPaymentProofController,
     cancelOrderByUserController,
     confirmOrderReceivedController,
-    getOrderByIdController
+    getOrderByIdController,
+    handleMidtransNotificationController
 } from '../controllers/order.controller';
 import { validateBody } from '../middlewares/validationMiddleware';
 import { checkoutSchema } from '../validations/order.validation';
@@ -16,29 +17,20 @@ import { Multer } from '../utils/multer';
 
 const router = express.Router();
 
-// Semua route di bawah ini hanya bisa diakses oleh user yang sudah login dan terverifikasi
-router.use(verifiedOnlyMiddleware);
 
-//route untuk membuat order baru
-router.post('/', validateBody(checkoutSchema), createOrderController);
+router.post('/midtrans/notification', handleMidtransNotificationController);
 
-//route untuk mengambil semua order milik user
-router.get('/my', getUserOrdersController);
-router.get('/my/:orderId', getOrderByIdController);
-//route untuk mengupload bukti pembayaran
+
+router.post('/', verifiedOnlyMiddleware, validateBody(checkoutSchema), createOrderController);
+router.get('/my', verifiedOnlyMiddleware, getUserOrdersController);
+router.get('/my/:orderId', verifiedOnlyMiddleware, getOrderByIdController);
 router.post(
   '/:orderId/payment-proof',
-  Multer("memoryStorage").single('paymentProof'),
+  verifiedOnlyMiddleware, Multer("memoryStorage").single('paymentProof'),
   uploadPaymentProofController
 );
-
-
-//route untuk membatalkan order oleh user (selama status masih waiting for payment)
-router.post('/my/:orderId/cancel', cancelOrderByUserController);
-
-
-//route untuk mengkonfirmasi penerimaan order oleh user
-router.post('/my/:orderId/confirm', confirmOrderReceivedController);
+router.post('/my/:orderId/cancel', verifiedOnlyMiddleware, cancelOrderByUserController);
+router.post('/my/:orderId/confirm', verifiedOnlyMiddleware, confirmOrderReceivedController);
 
 
 export default router;
