@@ -1,5 +1,3 @@
-// Di dalam file: src/routers/order.router.ts
-
 import express from 'express';
 import { 
     createOrderController, 

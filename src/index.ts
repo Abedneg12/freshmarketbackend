@@ -5,9 +5,6 @@ import helmet from 'helmet';
 import cors from 'cors';
 import './interfaces/IUserPayload';
 
-import { handleMidtransNotificationController } from "./controllers/order.controller";
-
-
 import { initScheduledJobs } from './cron/scheduler';
 
 import SuperAdminRouter from "./routers/super.admin.router";
@@ -72,6 +69,7 @@ app.use("/api/shipping", shippingRoutes);
 app.use("/stocks", StockReportRouter);
 app.use("/sales", SalesReportRouter);
 app.use("/api/management/stores", storeManagementRouter);
+
 
 
 
