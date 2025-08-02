@@ -15,10 +15,9 @@ import { Multer } from '../utils/multer';
 
 const router = express.Router();
 
-
 router.post('/midtrans/notification', handleMidtransNotificationController);
 
-
+// === Endpoint yang WAJIB login + verifikasi ===
 router.post('/', verifiedOnlyMiddleware, validateBody(checkoutSchema), createOrderController);
 router.get('/my', verifiedOnlyMiddleware, getUserOrdersController);
 router.get('/my/:orderId', verifiedOnlyMiddleware, getOrderByIdController);
@@ -29,6 +28,5 @@ router.post(
 );
 router.post('/my/:orderId/cancel', verifiedOnlyMiddleware, cancelOrderByUserController);
 router.post('/my/:orderId/confirm', verifiedOnlyMiddleware, confirmOrderReceivedController);
-
 
 export default router;
