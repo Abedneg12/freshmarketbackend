@@ -25,6 +25,7 @@ import shippingRoutes from "./routers/shipping.router";
 import StockReportRouter from "./routers/stocks.reports.router";
 import SalesReportRouter from "./routers/sales.report.router";
 import storeManagementRouter from "./routers/store.management.router";
+import midtransrouter from "./routers/midtrans.router";
 
 
 
@@ -50,7 +51,7 @@ app.get(
   },
 );
 
-
+app.use("/api/midtrans", midtransrouter);
 app.use("/super-admin", SuperAdminRouter);
 app.use('/api/admin/orders', AdminOrderRouters);
 app.use('/api/admin/dashboard', AdminDashboardRouter);
