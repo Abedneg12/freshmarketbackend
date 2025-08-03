@@ -4,18 +4,14 @@ import prisma from '../lib/prisma';
 import { Prisma, OrderStatus } from '@prisma/client';
 import { GetUserOrdersFilter } from '../interfaces/order.interface';
 
-// ===================================================================================
-// INISIALISASI MIDTRANS CLIENT
-// ===================================================================================
+
 const snap = new midtransClient.Snap({
   isProduction: false,
   serverKey: MIDTRANS_SERVER_KEY,
   clientKey: MIDTRANS_CLIENT_KEY,
 });
 
-// ===================================================================================
-// FUNGSI UTILITAS
-// ===================================================================================
+
 function getDistanceMeters(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const toRad = (v: number) => (v * Math.PI) / 180;
   const R = 6371000;
@@ -28,9 +24,7 @@ function getDistanceMeters(lat1: number, lng1: number, lat2: number, lng2: numbe
   return R * c;
 }
 
-// ===================================================================================
-// SERVICE UNTUK CHECKOUT (VERSI DISEMPURNAKAN)
-// ===================================================================================
+
 export const checkout = async (
   userId: number,
   addressId: number,
@@ -73,7 +67,7 @@ export const checkout = async (
   if (!chosenStore) throw new Error('Tidak ada gudang dengan stok mencukupi dalam radius 7 km.');
 
   const subtotal = selectedItems.reduce((sum, item) => sum + (item.product.basePrice * item.quantity), 0);
-  const shippingCost = Math.ceil(chosenStore.distance / 1000) * 5000;
+  const shippingCost = 5000;
   
   let voucherId: number | null = null;
   let voucherDiscount = 0;
@@ -86,7 +80,7 @@ export const checkout = async (
   }
   const totalPrice = subtotal + shippingCost - voucherDiscount;
 
-  // 3. Buat pesanan di database
+ 
   const order = await prisma.$transaction(async (tx) => {
     const newOrder = await tx.order.create({
       data: {
@@ -114,7 +108,7 @@ export const checkout = async (
     return newOrder;
   });
 
-  // 4. Proses pembayaran
+
   if (paymentMethod === 'MIDTRANS') {
     const item_details = selectedItems.map(item => ({
         id: item.product.id.toString(),
@@ -148,7 +142,7 @@ export const checkout = async (
 };
 
 
-// SERVICE UNTUK FUNGSI LAIN
+
 export const getUserOrdersService = async (userId: number, filter: GetUserOrdersFilter) => {
   const { status, orderId, startDate, endDate, page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc' } = filter;
   const whereClause: Prisma.OrderWhereInput = { userId };
@@ -203,7 +197,7 @@ export const getOrderById = async (userId: number, orderId: number) => {
 };
 
 export const submitPaymentProof = async (orderId: number, userId: number, imageUrl: string) => {
-  // Fungsi ini tidak berubah
+ 
   const order = await prisma.order.findFirst({ where: { id: orderId, userId: userId } });
   if (!order) throw new Error('Pesanan tidak ditemukan atau Anda tidak memiliki akses ke pesanan ini.');
   if (order.status !== 'WAITING_FOR_PAYMENT') throw new Error('Hanya pesanan dengan status "Menunggu Pembayaran" yang dapat diunggah bukti bayarnya.');
@@ -217,7 +211,7 @@ export const submitPaymentProof = async (orderId: number, userId: number, imageU
 };
 
 
-// SERVICE UNTUK NOTIFIKASI MIDTRANS (BARU)
+
 export const handleMidtransNotification = async (notification: any) => {
   const statusResponse = await snap.transaction.notification(notification);
   const orderId = Number(statusResponse.order_id);
@@ -261,14 +255,13 @@ export const handleMidtransNotification = async (notification: any) => {
 
 
 export const cancelOrderByUser = async (userId: number, orderId: number) => {
-  // Langkah 1: Cari pesanan beserta item-itemnya, dan pastikan milik user.
   const order = await prisma.order.findFirst({
     where: { 
       id: orderId,
       userId: userId 
     },
     include: {
-      items: true, // Sertakan item pesanan untuk proses pengembalian stok
+      items: true,
     },
   });
 
@@ -276,14 +269,13 @@ export const cancelOrderByUser = async (userId: number, orderId: number) => {
     throw new Error(`Pesanan dengan ID ${orderId} tidak ditemukan atau bukan milik Anda.`);
   }
 
-  // Langkah 2: Validasi status pesanan sesuai dokumen.
+ 
   if (order.status !== 'WAITING_FOR_PAYMENT') {
     throw new Error('Pesanan hanya bisa dibatalkan jika statusnya "Menunggu Pembayaran".');
   }
 
-  // Langkah 3: Lakukan semua perubahan dalam satu transaksi database.
+
   return prisma.$transaction(async (tx) => {
-    // a. Kembalikan stok untuk setiap item dalam pesanan.
     for (const item of order.items) {
       await tx.stock.updateMany({
         where: {
@@ -297,31 +289,30 @@ export const cancelOrderByUser = async (userId: number, orderId: number) => {
         },
       });
 
-      // b. Buat jurnal inventaris untuk mencatat pengembalian stok.
       await tx.inventoryJournal.create({
         data: {
           productId: item.productId,
           storeId: order.storeId,
-          type: 'IN', // Stok masuk kembali
+          type: 'IN', 
           quantity: item.quantity,
           note: `Pengembalian stok dari pesanan #${orderId} yang dibatalkan oleh pengguna.`,
         },
       });
     }
 
-    // c. Ubah status pesanan menjadi CANCELED.
+ 
     const canceledOrder = await tx.order.update({
       where: { id: orderId },
       data: { status: OrderStatus.CANCELED },
     });
 
-    // d. Catat histori perubahan status.
+  
     await tx.orderStatusLog.create({
       data: {
         orderId: orderId,
         previousStatus: order.status,
         newStatus: OrderStatus.CANCELED,
-        changedById: userId, // Aksi dilakukan oleh pengguna
+        changedById: userId, 
         note: 'Pesanan dibatalkan oleh pengguna.',
       },
     });
@@ -331,7 +322,6 @@ export const cancelOrderByUser = async (userId: number, orderId: number) => {
 };
 
 export const confirmOrderReceived = async (userId: number, orderId: number) => {
-  // Langkah 1: Cari pesanan dan pastikan milik user yang benar.
   const order = await prisma.order.findFirst({
     where: {
       id: orderId,
@@ -343,26 +333,26 @@ export const confirmOrderReceived = async (userId: number, orderId: number) => {
     throw new Error(`Pesanan dengan ID ${orderId} tidak ditemukan atau bukan milik Anda.`);
   }
 
-  // Langkah 2: Validasi status. Hanya pesanan yang sudah dikirim yang bisa dikonfirmasi.
+
   if (order.status !== 'SHIPPED') {
     throw new Error('Hanya pesanan dengan status "Dikirim" yang bisa dikonfirmasi.');
   }
 
-  // Langkah 3: Lakukan perubahan dalam satu transaksi.
+
   return prisma.$transaction(async (tx) => {
-    // a. Ubah status pesanan menjadi CONFIRMED.
+ 
     const confirmedOrder = await tx.order.update({
       where: { id: orderId },
       data: { status: OrderStatus.CONFIRMED },
     });
 
-    // b. Catat histori perubahan status.
+    
     await tx.orderStatusLog.create({
       data: {
         orderId: orderId,
         previousStatus: OrderStatus.SHIPPED,
         newStatus: OrderStatus.CONFIRMED,
-        changedById: userId, // Aksi dilakukan oleh pengguna
+        changedById: userId, 
         note: 'Pesanan dikonfirmasi diterima oleh pengguna.',
       },
     });
