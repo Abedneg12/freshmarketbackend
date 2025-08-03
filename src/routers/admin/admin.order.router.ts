@@ -3,7 +3,8 @@ import {
   getOrdersController, 
   confirmPaymentController,
   shipOrderController,
-  cancelOrderController
+  cancelOrderController,
+  getOrderDetailController
 } from '../../controllers/admin/admin.order.controller';
 import { authOnlyMiddleware } from '../../middlewares/authOnlyMiddleware';
 import { requireRole } from '../../middlewares/roleMiddleware';
@@ -17,6 +18,8 @@ router.use([authOnlyMiddleware, requireRole(['SUPER_ADMIN', 'STORE_ADMIN'])]);
 
 // Endpoint untuk mengambil daftar pesanan
 router.get('/', getOrdersController);
+
+router.get('/:orderId', getOrderDetailController);
 
 // Endpoint untuk konfirmasi pembayaran
 router.post(

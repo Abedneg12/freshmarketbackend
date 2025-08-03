@@ -45,6 +45,39 @@ export const getOrdersForAdmin = async (adminUser: IUserPayload, filter: IAdminO
 };
 
 
+export const getOrderDetailForAdmin = async (adminUser: IUserPayload, orderId: number) => {
+  // Cari order lengkap, sertakan relasi penting
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: {
+      user: { select: { id: true, fullName: true, email: true } },
+      store: true,
+      address: true,
+      items: {
+        include: {
+          product: {
+            select: { id: true, name: true, images: true }
+          }
+        }
+      },
+      paymentProof: true,
+      statusLogs: true,
+      voucher: true,
+    },
+  });
+  if (!order) throw new Error("Pesanan tidak ditemukan");
+
+  // Validasi hak akses untuk STORE_ADMIN
+  if (adminUser.role === 'STORE_ADMIN') {
+    const assignment = await prisma.storeAdminAssignment.findFirst({
+      where: { userId: adminUser.id, storeId: order.storeId }
+    });
+    if (!assignment) throw new Error('Forbidden: Anda tidak punya akses ke pesanan ini.');
+  }
+  return order;
+};
+
+
 // SERVICE UNTUK KONFIRMASI PEMBAYARAN
 export const confirmPayment = async (adminUser: IUserPayload, orderId: number, decision: TPaymentDecision) => {
   // Logika validasi pesanan tetap sama

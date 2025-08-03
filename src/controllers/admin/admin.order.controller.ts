@@ -1,16 +1,9 @@
-// src/controllers/admin/order.admin.controller.ts
-
 import { Request, Response } from 'express';
-// Sesuaikan path import jika struktur folder Anda berbeda
-import { getOrdersForAdmin, confirmPayment, shipOrder, cancelOrder} from '../../services/admin/order.admin.service';
+import { getOrdersForAdmin, confirmPayment, shipOrder, cancelOrder, getOrderDetailForAdmin} from '../../services/admin/order.admin.service';
 import { OrderStatus } from '@prisma/client';
 import { TPaymentDecision } from '../../interfaces/admin.interface';
 
-/**
- * Controller untuk mengambil daftar pesanan dari sisi admin.
- * Fungsi ini mengambil parameter filter dari query string dan data admin dari token,
- * lalu memanggil service untuk mendapatkan data.
- */
+
 export const getOrdersController = (req: Request, res: Response): void => {
     // Ambil data admin yang sedang login dari middleware otentikasi
     const adminUser = req.user;
@@ -51,6 +44,20 @@ export const getOrdersController = (req: Request, res: Response): void => {
             res.status(500).json({ message: 'Gagal mengambil daftar pesanan', error: error.message });
         });
 };
+
+
+
+export const getOrderDetailController = async (req: Request, res: Response) => {
+  try {
+    const adminUser = req.user!;
+    const orderId = Number(req.params.orderId);
+    const order = await getOrderDetailForAdmin(adminUser, orderId);
+    res.status(200).json({ data: order });
+  } catch (error: any) {
+    res.status(404).json({ message: error.message });
+  }
+};
+
 
 
 export const confirmPaymentController = (req: Request, res: Response): void => {
