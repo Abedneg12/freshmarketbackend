@@ -13,7 +13,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.autoConfirmShippedOrders = exports.cancelExpiredOrders = exports.cancelOrder = exports.shipOrder = exports.confirmPayment = exports.getOrdersForAdmin = void 0;
+exports.autoConfirmShippedOrders = exports.cancelExpiredOrders = exports.cancelOrder = exports.shipOrder = exports.confirmPayment = exports.getOrderDetailForAdmin = exports.getOrdersForAdmin = void 0;
 const client_1 = require("@prisma/client");
 const prisma_1 = __importDefault(require("../../lib/prisma"));
 const emailorderstatus_1 = require("../../utils/emailorderstatus");
@@ -55,6 +55,39 @@ const getOrdersForAdmin = (adminUser, filter) => __awaiter(void 0, void 0, void 
     return { data: orders, pagination: { total: totalOrders, page, limit, totalPages: Math.ceil(totalOrders / limit) } };
 });
 exports.getOrdersForAdmin = getOrdersForAdmin;
+const getOrderDetailForAdmin = (adminUser, orderId) => __awaiter(void 0, void 0, void 0, function* () {
+    // Cari order lengkap, sertakan relasi penting
+    const order = yield prisma_1.default.order.findUnique({
+        where: { id: orderId },
+        include: {
+            user: { select: { id: true, fullName: true, email: true } },
+            store: true,
+            address: true,
+            items: {
+                include: {
+                    product: {
+                        select: { id: true, name: true, images: true }
+                    }
+                }
+            },
+            paymentProof: true,
+            statusLogs: true,
+            voucher: true,
+        },
+    });
+    if (!order)
+        throw new Error("Pesanan tidak ditemukan");
+    // Validasi hak akses untuk STORE_ADMIN
+    if (adminUser.role === 'STORE_ADMIN') {
+        const assignment = yield prisma_1.default.storeAdminAssignment.findFirst({
+            where: { userId: adminUser.id, storeId: order.storeId }
+        });
+        if (!assignment)
+            throw new Error('Forbidden: Anda tidak punya akses ke pesanan ini.');
+    }
+    return order;
+});
+exports.getOrderDetailForAdmin = getOrderDetailForAdmin;
 // SERVICE UNTUK KONFIRMASI PEMBAYARAN
 const confirmPayment = (adminUser, orderId, decision) => __awaiter(void 0, void 0, void 0, function* () {
     // Logika validasi pesanan tetap sama

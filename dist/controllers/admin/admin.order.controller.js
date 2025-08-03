@@ -1,14 +1,16 @@
 "use strict";
-// src/controllers/admin/order.admin.controller.ts
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cancelOrderController = exports.shipOrderController = exports.confirmPaymentController = exports.getOrdersController = void 0;
-// Sesuaikan path import jika struktur folder Anda berbeda
+exports.cancelOrderController = exports.shipOrderController = exports.confirmPaymentController = exports.getOrderDetailController = exports.getOrdersController = void 0;
 const order_admin_service_1 = require("../../services/admin/order.admin.service");
-/**
- * Controller untuk mengambil daftar pesanan dari sisi admin.
- * Fungsi ini mengambil parameter filter dari query string dan data admin dari token,
- * lalu memanggil service untuk mendapatkan data.
- */
 const getOrdersController = (req, res) => {
     // Ambil data admin yang sedang login dari middleware otentikasi
     const adminUser = req.user;
@@ -36,6 +38,18 @@ const getOrdersController = (req, res) => {
     });
 };
 exports.getOrdersController = getOrdersController;
+const getOrderDetailController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const adminUser = req.user;
+        const orderId = Number(req.params.orderId);
+        const order = yield (0, order_admin_service_1.getOrderDetailForAdmin)(adminUser, orderId);
+        res.status(200).json({ data: order });
+    }
+    catch (error) {
+        res.status(404).json({ message: error.message });
+    }
+});
+exports.getOrderDetailController = getOrderDetailController;
 const confirmPaymentController = (req, res) => {
     // Ambil data admin dari token
     const adminUser = req.user;

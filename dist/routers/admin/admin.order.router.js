@@ -11,6 +11,7 @@ const router = (0, express_1.Router)();
 router.use([authOnlyMiddleware_1.authOnlyMiddleware, (0, roleMiddleware_1.requireRole)(['SUPER_ADMIN', 'STORE_ADMIN'])]);
 // Endpoint untuk mengambil daftar pesanan
 router.get('/', admin_order_controller_1.getOrdersController);
+router.get('/:orderId', admin_order_controller_1.getOrderDetailController);
 // Endpoint untuk konfirmasi pembayaran
 router.post('/:orderId/confirm', (0, validationMiddleware_1.validateBody)(order_admin_validation_1.confirmPaymentSchema), admin_order_controller_1.confirmPaymentController);
 // Endpoint untuk mengirim pesanan
