@@ -17,17 +17,11 @@ const midtrans_client_1 = __importDefault(require("midtrans-client"));
 const config_1 = require("../config");
 const prisma_1 = __importDefault(require("../lib/prisma"));
 const client_1 = require("@prisma/client");
-// ===================================================================================
-// INISIALISASI MIDTRANS CLIENT
-// ===================================================================================
 const snap = new midtrans_client_1.default.Snap({
     isProduction: false,
     serverKey: config_1.MIDTRANS_SERVER_KEY,
     clientKey: config_1.MIDTRANS_CLIENT_KEY,
 });
-// ===================================================================================
-// FUNGSI UTILITAS
-// ===================================================================================
 function getDistanceMeters(lat1, lng1, lat2, lng2) {
     const toRad = (v) => (v * Math.PI) / 180;
     const R = 6371000;
@@ -39,9 +33,6 @@ function getDistanceMeters(lat1, lng1, lat2, lng2) {
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
 }
-// ===================================================================================
-// SERVICE UNTUK CHECKOUT (VERSI DISEMPURNAKAN)
-// ===================================================================================
 const checkout = (userId_1, addressId_1, paymentMethod_1, voucherCode_1, ...args_1) => __awaiter(void 0, [userId_1, addressId_1, paymentMethod_1, voucherCode_1, ...args_1], void 0, function* (userId, addressId, paymentMethod, voucherCode, cartItemIds = []) {
     var _a, _b;
     // 1. Validasi data awal
@@ -78,7 +69,7 @@ const checkout = (userId_1, addressId_1, paymentMethod_1, voucherCode_1, ...args
     if (!chosenStore)
         throw new Error('Tidak ada gudang dengan stok mencukupi dalam radius 7 km.');
     const subtotal = selectedItems.reduce((sum, item) => sum + (item.product.basePrice * item.quantity), 0);
-    const shippingCost = Math.ceil(chosenStore.distance / 1000) * 5000;
+    const shippingCost = 5000;
     let voucherId = null;
     let voucherDiscount = 0;
     if (voucherCode) {
@@ -89,7 +80,6 @@ const checkout = (userId_1, addressId_1, paymentMethod_1, voucherCode_1, ...args
         }
     }
     const totalPrice = subtotal + shippingCost - voucherDiscount;
-    // 3. Buat pesanan di database
     const order = yield prisma_1.default.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
         const newOrder = yield tx.order.create({
             data: {
@@ -112,7 +102,6 @@ const checkout = (userId_1, addressId_1, paymentMethod_1, voucherCode_1, ...args
         yield tx.orderStatusLog.create({ data: { orderId: newOrder.id, previousStatus: client_1.OrderStatus.WAITING_FOR_PAYMENT, newStatus: client_1.OrderStatus.WAITING_FOR_PAYMENT, changedById: userId, note: 'Order created' } });
         return newOrder;
     }));
-    // 4. Proses pembayaran
     if (paymentMethod === 'MIDTRANS') {
         const item_details = selectedItems.map(item => ({
             id: item.product.id.toString(),
@@ -143,7 +132,6 @@ const checkout = (userId_1, addressId_1, paymentMethod_1, voucherCode_1, ...args
     return { order };
 });
 exports.checkout = checkout;
-// SERVICE UNTUK FUNGSI LAIN
 const getUserOrdersService = (userId, filter) => __awaiter(void 0, void 0, void 0, function* () {
     const { status, orderId, startDate, endDate, page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc' } = filter;
     const whereClause = { userId };
@@ -201,7 +189,6 @@ const getOrderById = (userId, orderId) => __awaiter(void 0, void 0, void 0, func
 });
 exports.getOrderById = getOrderById;
 const submitPaymentProof = (orderId, userId, imageUrl) => __awaiter(void 0, void 0, void 0, function* () {
-    // Fungsi ini tidak berubah
     const order = yield prisma_1.default.order.findFirst({ where: { id: orderId, userId: userId } });
     if (!order)
         throw new Error('Pesanan tidak ditemukan atau Anda tidak memiliki akses ke pesanan ini.');
@@ -216,7 +203,6 @@ const submitPaymentProof = (orderId, userId, imageUrl) => __awaiter(void 0, void
     return updatedOrder;
 });
 exports.submitPaymentProof = submitPaymentProof;
-// SERVICE UNTUK NOTIFIKASI MIDTRANS (BARU)
 const handleMidtransNotification = (notification) => __awaiter(void 0, void 0, void 0, function* () {
     const statusResponse = yield snap.transaction.notification(notification);
     const orderId = Number(statusResponse.order_id);
@@ -256,26 +242,22 @@ const handleMidtransNotification = (notification) => __awaiter(void 0, void 0, v
 });
 exports.handleMidtransNotification = handleMidtransNotification;
 const cancelOrderByUser = (userId, orderId) => __awaiter(void 0, void 0, void 0, function* () {
-    // Langkah 1: Cari pesanan beserta item-itemnya, dan pastikan milik user.
     const order = yield prisma_1.default.order.findFirst({
         where: {
             id: orderId,
             userId: userId
         },
         include: {
-            items: true, // Sertakan item pesanan untuk proses pengembalian stok
+            items: true,
         },
     });
     if (!order) {
         throw new Error(`Pesanan dengan ID ${orderId} tidak ditemukan atau bukan milik Anda.`);
     }
-    // Langkah 2: Validasi status pesanan sesuai dokumen.
     if (order.status !== 'WAITING_FOR_PAYMENT') {
         throw new Error('Pesanan hanya bisa dibatalkan jika statusnya "Menunggu Pembayaran".');
     }
-    // Langkah 3: Lakukan semua perubahan dalam satu transaksi database.
     return prisma_1.default.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
-        // a. Kembalikan stok untuk setiap item dalam pesanan.
         for (const item of order.items) {
             yield tx.stock.updateMany({
                 where: {
@@ -288,29 +270,26 @@ const cancelOrderByUser = (userId, orderId) => __awaiter(void 0, void 0, void 0,
                     },
                 },
             });
-            // b. Buat jurnal inventaris untuk mencatat pengembalian stok.
             yield tx.inventoryJournal.create({
                 data: {
                     productId: item.productId,
                     storeId: order.storeId,
-                    type: 'IN', // Stok masuk kembali
+                    type: 'IN',
                     quantity: item.quantity,
                     note: `Pengembalian stok dari pesanan #${orderId} yang dibatalkan oleh pengguna.`,
                 },
             });
         }
-        // c. Ubah status pesanan menjadi CANCELED.
         const canceledOrder = yield tx.order.update({
             where: { id: orderId },
             data: { status: client_1.OrderStatus.CANCELED },
         });
-        // d. Catat histori perubahan status.
         yield tx.orderStatusLog.create({
             data: {
                 orderId: orderId,
                 previousStatus: order.status,
                 newStatus: client_1.OrderStatus.CANCELED,
-                changedById: userId, // Aksi dilakukan oleh pengguna
+                changedById: userId,
                 note: 'Pesanan dibatalkan oleh pengguna.',
             },
         });
@@ -319,7 +298,6 @@ const cancelOrderByUser = (userId, orderId) => __awaiter(void 0, void 0, void 0,
 });
 exports.cancelOrderByUser = cancelOrderByUser;
 const confirmOrderReceived = (userId, orderId) => __awaiter(void 0, void 0, void 0, function* () {
-    // Langkah 1: Cari pesanan dan pastikan milik user yang benar.
     const order = yield prisma_1.default.order.findFirst({
         where: {
             id: orderId,
@@ -329,24 +307,20 @@ const confirmOrderReceived = (userId, orderId) => __awaiter(void 0, void 0, void
     if (!order) {
         throw new Error(`Pesanan dengan ID ${orderId} tidak ditemukan atau bukan milik Anda.`);
     }
-    // Langkah 2: Validasi status. Hanya pesanan yang sudah dikirim yang bisa dikonfirmasi.
     if (order.status !== 'SHIPPED') {
         throw new Error('Hanya pesanan dengan status "Dikirim" yang bisa dikonfirmasi.');
     }
-    // Langkah 3: Lakukan perubahan dalam satu transaksi.
     return prisma_1.default.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
-        // a. Ubah status pesanan menjadi CONFIRMED.
         const confirmedOrder = yield tx.order.update({
             where: { id: orderId },
             data: { status: client_1.OrderStatus.CONFIRMED },
         });
-        // b. Catat histori perubahan status.
         yield tx.orderStatusLog.create({
             data: {
                 orderId: orderId,
                 previousStatus: client_1.OrderStatus.SHIPPED,
                 newStatus: client_1.OrderStatus.CONFIRMED,
-                changedById: userId, // Aksi dilakukan oleh pengguna
+                changedById: userId,
                 note: 'Pesanan dikonfirmasi diterima oleh pengguna.',
             },
         });
