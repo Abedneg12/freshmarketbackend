@@ -14,6 +14,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteStore = exports.updateStore = exports.createStore = exports.getAllStores = void 0;
 const prisma_1 = __importDefault(require("../lib/prisma"));
+const cloudinary_1 = require("../utils/cloudinary");
 const getAllStores = (page, limit) => __awaiter(void 0, void 0, void 0, function* () {
     const skip = (page - 1) * limit;
     const stores = yield prisma_1.default.store.findMany({
@@ -34,7 +35,12 @@ const getAllStores = (page, limit) => __awaiter(void 0, void 0, void 0, function
     return { stores, totalStores };
 });
 exports.getAllStores = getAllStores;
-const createStore = (data) => __awaiter(void 0, void 0, void 0, function* () {
+const createStore = (data, file) => __awaiter(void 0, void 0, void 0, function* () {
+    let imageUrl = "";
+    if (file) {
+        const uploadResult = yield (0, cloudinary_1.cloudinaryUpload)(file);
+        imageUrl = uploadResult.secure_url;
+    }
     return prisma_1.default.store.create({
         data: {
             name: data.name,
@@ -42,11 +48,27 @@ const createStore = (data) => __awaiter(void 0, void 0, void 0, function* () {
             city: data.city,
             latitude: data.latitude,
             longitude: data.longitude,
+            imageUrl: imageUrl,
         },
     });
 });
 exports.createStore = createStore;
-const updateStore = (storeId, data) => __awaiter(void 0, void 0, void 0, function* () {
+const updateStore = (storeId, data, file) => __awaiter(void 0, void 0, void 0, function* () {
+    const store = yield prisma_1.default.store.findUnique({ where: { id: storeId } });
+    if (!store)
+        throw new Error("Toko tidak ditemukan");
+    let updatedImageUrl = store.imageUrl;
+    if (data.removeImage === "true" && store.imageUrl) {
+        yield (0, cloudinary_1.cloudinaryRemove)(store.imageUrl);
+        updatedImageUrl = "";
+    }
+    if (file) {
+        if (store.imageUrl) {
+            yield (0, cloudinary_1.cloudinaryRemove)(store.imageUrl);
+        }
+        const uploadResult = yield (0, cloudinary_1.cloudinaryUpload)(file);
+        updatedImageUrl = uploadResult.secure_url;
+    }
     return prisma_1.default.store.update({
         where: { id: storeId },
         data: {
@@ -55,6 +77,7 @@ const updateStore = (storeId, data) => __awaiter(void 0, void 0, void 0, functio
             city: data.city,
             latitude: data.latitude,
             longitude: data.longitude,
+            imageUrl: updatedImageUrl,
         },
     });
 });

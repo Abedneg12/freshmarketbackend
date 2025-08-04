@@ -81,7 +81,7 @@ function registerService(data) {
             }
         }
         const token = jsonwebtoken_1.default.sign({ userId: user.id, type: "registration" }, SECRET_KEY, { expiresIn: "1h" });
-        const verificationLink = `http://localhost:3000/auth/verify?token=${token}`;
+        const verificationLink = `https://freshmarketfrontend.vercel.app/auth/verify?token=${token}`;
         yield (0, verificationEmail_1.sendVerificationEmail)(user.email, user.fullName, verificationLink);
         return {
             message: "Registrasi berhasil, silahkan cek email untuk verifikasi",
@@ -100,7 +100,7 @@ function resendVerificationService(email) {
             throw new Error("Akun ini sudah diverifikasi.");
         }
         const token = jsonwebtoken_1.default.sign({ userId: user.id, type: "registration" }, SECRET_KEY, { expiresIn: "1h" });
-        const verificationLink = `http://localhost:3000/auth/verify?token=${token}`;
+        const verificationLink = `https://freshmarketfrontend.vercel.app/auth/verify?token=${token}`;
         yield (0, verificationEmail_1.sendVerificationEmail)(user.email, user.fullName, verificationLink);
         return {
             message: "Email verifikasi baru telah dikirim. Silakan periksa email Anda.",

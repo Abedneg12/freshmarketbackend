@@ -12,4 +12,5 @@ router.patch("/change-password", authOnlyMiddleware_1.authOnlyMiddleware, userCo
 router.patch("/profile/picture", authOnlyMiddleware_1.authOnlyMiddleware, (0, multer_1.Multer)("memoryStorage").single("file"), userController_1.updateProfilePictureController);
 router.post("/request-email-update", authOnlyMiddleware_1.authOnlyMiddleware, userController_1.requestEmailUpdateController);
 router.post("/create-password", authOnlyMiddleware_1.authOnlyMiddleware, userController_1.createPasswordController);
+router.delete("/profile/picture", authOnlyMiddleware_1.authOnlyMiddleware, userController_1.deleteProfilePictureController);
 exports.default = router;

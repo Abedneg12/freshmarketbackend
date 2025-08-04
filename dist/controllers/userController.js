@@ -49,6 +49,7 @@ exports.updateProfilePictureController = updateProfilePictureController;
 exports.requestEmailUpdateController = requestEmailUpdateController;
 exports.confirmEmailUpdateController = confirmEmailUpdateController;
 exports.createPasswordController = createPasswordController;
+exports.deleteProfilePictureController = deleteProfilePictureController;
 const userService = __importStar(require("../services/userService"));
 const config_1 = require("../config");
 function getProfileController(req, res) {
@@ -166,6 +167,21 @@ function createPasswordController(req, res) {
         }
         catch (error) {
             res.status(400).json({ error: error.message });
+        }
+    });
+}
+function deleteProfilePictureController(req, res) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const userId = req.user.id;
+            const result = yield userService.deleteProfilePictureService(userId);
+            res
+                .status(200)
+                .json({ message: "Foto profil berhasil dihapus", data: result });
+        }
+        catch (error) {
+            console.error("[PROFILE PICTURE DELETE ERROR]:", error);
+            res.status(500).json({ error: error.message });
         }
     });
 }

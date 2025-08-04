@@ -20,7 +20,7 @@ const client_1 = require("@prisma/client");
 passport_1.default.use(new passport_google_oauth20_1.Strategy({
     clientID: config_1.GOOGLE_ID,
     clientSecret: config_1.GOOGLE_SECRET,
-    callbackURL: "http://localhost:8000/api/oauth/google/callback",
+    callbackURL: "https://freshmarketbackend.vercel.app/api/oauth/google/callback",
 }, (_accessToken, _refreshToken, profile, done) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {

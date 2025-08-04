@@ -19,6 +19,7 @@ exports.updateProfilePictureService = updateProfilePictureService;
 exports.requestEmailUpdateService = requestEmailUpdateService;
 exports.confirmEmailUpdateService = confirmEmailUpdateService;
 exports.createPasswordService = createPasswordService;
+exports.deleteProfilePictureService = deleteProfilePictureService;
 const prisma_1 = __importDefault(require("../lib/prisma"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const cloudinary_1 = require("../utils/cloudinary");
@@ -124,7 +125,7 @@ function requestEmailUpdateService(userId, newEmail) {
             throw new Error("User tidak ditemukan.");
         }
         const token = jsonwebtoken_1.default.sign({ userId, newEmail, type: "email_update" }, SECRET_KEY, { expiresIn: "1h" });
-        const confirmationLink = `http://localhost:8000/api/user/confirm-email-update?token=${token}`;
+        const confirmationLink = `https://freshmarketbackend.vercel.app/api/user/confirm-email-update?token=${token}`;
         yield (0, updateEmailVerification_1.sendUpdateEmailVerification)(newEmail, user.fullName, confirmationLink);
         return {
             message: `Sebuah link konfirmasi telah dikirim ke ${newEmail}. Silakan periksa email Anda untuk menyelesaikan perubahan.`,
@@ -159,6 +160,24 @@ function createPasswordService(userId, password) {
         yield prisma_1.default.user.update({
             where: { id: userId },
             data: { password: hashedPassword },
+        });
+    });
+}
+function deleteProfilePictureService(userId) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const user = yield prisma_1.default.user.findUnique({
+            where: { id: userId },
+            select: { profilePicture: true },
+        });
+        if (!user)
+            throw new Error("User tidak ditemukan.");
+        if (user.profilePicture) {
+            yield (0, cloudinary_1.cloudinaryRemove)(user.profilePicture);
+        }
+        return yield prisma_1.default.user.update({
+            where: { id: userId },
+            data: { profilePicture: null },
+            select: { id: true, profilePicture: true },
         });
     });
 }

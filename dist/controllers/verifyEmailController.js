@@ -19,9 +19,7 @@ function verifyController(req, res) {
             res.json(result);
         }
         catch (error) {
-            res
-                .status(400)
-                .json({
+            res.status(400).json({
                 error: error.message || "Proses verifikasi gagal. Silahkan coba lagi.",
             });
         }

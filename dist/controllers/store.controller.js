@@ -67,7 +67,7 @@ const getAllStoresController = (req, res) => __awaiter(void 0, void 0, void 0, f
 exports.getAllStoresController = getAllStoresController;
 const createStoreController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const newStore = yield storeService.createStore(req.body);
+        const newStore = yield storeService.createStore(req.body, req.file);
         res.status(201).json(newStore);
     }
     catch (error) {
@@ -80,7 +80,7 @@ exports.createStoreController = createStoreController;
 const updateStoreController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const storeId = parseInt(req.params.storeId, 10);
-        const updatedStore = yield storeService.updateStore(storeId, req.body);
+        const updatedStore = yield storeService.updateStore(storeId, req.body, req.file);
         res.status(200).json(updatedStore);
     }
     catch (error) {
