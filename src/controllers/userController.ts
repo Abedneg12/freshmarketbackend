@@ -141,3 +141,19 @@ export async function createPasswordController(req: Request, res: Response) {
     res.status(400).json({ error: error.message });
   }
 }
+
+export async function deleteProfilePictureController(
+  req: Request,
+  res: Response
+) {
+  try {
+    const userId = (req.user as IUserPayload).id;
+    const result = await userService.deleteProfilePictureService(userId);
+    res
+      .status(200)
+      .json({ message: "Foto profil berhasil dihapus", data: result });
+  } catch (error: any) {
+    console.error("[PROFILE PICTURE DELETE ERROR]:", error);
+    res.status(500).json({ error: error.message });
+  }
+}

@@ -28,7 +28,7 @@ export const getAllStoresController = async (req: Request, res: Response) => {
 
 export const createStoreController = async (req: Request, res: Response) => {
   try {
-    const newStore = await storeService.createStore(req.body);
+    const newStore = await storeService.createStore(req.body, req.file);
     res.status(201).json(newStore);
   } catch (error: any) {
     res
@@ -40,7 +40,11 @@ export const createStoreController = async (req: Request, res: Response) => {
 export const updateStoreController = async (req: Request, res: Response) => {
   try {
     const storeId = parseInt(req.params.storeId, 10);
-    const updatedStore = await storeService.updateStore(storeId, req.body);
+    const updatedStore = await storeService.updateStore(
+      storeId,
+      req.body,
+      req.file
+    );
     res.status(200).json(updatedStore);
   } catch (error: any) {
     res
