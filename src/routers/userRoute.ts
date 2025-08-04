@@ -7,6 +7,7 @@ import {
   requestEmailUpdateController,
   confirmEmailUpdateController,
   createPasswordController,
+  deleteProfilePictureController,
 } from "../controllers/userController";
 import { authOnlyMiddleware } from "../middlewares/authOnlyMiddleware";
 import { Multer } from "../utils/multer";
@@ -30,5 +31,11 @@ router.post(
   requestEmailUpdateController
 );
 router.post("/create-password", authOnlyMiddleware, createPasswordController);
+
+router.delete(
+  "/profile/picture",
+  authOnlyMiddleware,
+  deleteProfilePictureController
+);
 
 export default router;

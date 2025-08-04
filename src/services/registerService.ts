@@ -82,7 +82,7 @@ export async function registerService(data: {
     SECRET_KEY,
     { expiresIn: "1h" }
   );
-  const verificationLink = `http://localhost:3000/auth/verify?token=${token}`;
+  const verificationLink = `https://freshmarketfrontend.vercel.app/auth/verify?token=${token}`;
   await sendVerificationEmail(user.email, user.fullName, verificationLink);
 
   return {
@@ -108,7 +108,7 @@ export async function resendVerificationService(email: string) {
     SECRET_KEY,
     { expiresIn: "1h" }
   );
-  const verificationLink = `http://localhost:3000/auth/verify?token=${token}`;
+  const verificationLink = `https://freshmarketfrontend.vercel.app/auth/verify?token=${token}`;
   await sendVerificationEmail(user.email, user.fullName, verificationLink);
 
   return {

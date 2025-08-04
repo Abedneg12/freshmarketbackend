@@ -9,7 +9,8 @@ passport.use(
     {
       clientID: GOOGLE_ID!,
       clientSecret: GOOGLE_SECRET!,
-      callbackURL: "http://localhost:8000/api/oauth/google/callback",
+      callbackURL:
+        "https://freshmarketbackend.vercel.app/api/oauth/google/callback",
     },
     async (_accessToken: string, _refreshToken: string, profile, done) => {
       try {

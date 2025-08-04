@@ -3,20 +3,45 @@
 <html>
 
 <head>
-    <meta charset="UTF-8">
-    <title>Verifikasi Akun</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .button {
+            display: inline-block;
+            background-color: #28a745;
+            color: white;
+            padding: 12px 25px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+    </style>
 </head>
 
 <body>
-    <h2>Hai, {{fullName}}</h2>
-    <p>Terima kasih telah mendaftar di Freshmart!</p>
-    <p>Silakan klik tombol di bawah ini untuk memverifikasi akun kamu:</p>
-    <p>
-        <a href="{{link}}"
-            style="padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none;">Verifikasi
+    <div class="container">
+        <h2>Verifikasi Akun</h2>
+        <p>Hai, {{fullName}}</p>
+        <p>Terima kasih telah mendaftar di Freshmart!</p>
+        <p>Silakan klik tombol di bawah ini untuk memverifikasi akun kamu:</p>
+        <p style="text-align: center; margin: 30px 0;">
+            <a href="{{link}}" class="button">Verifikasi
             Akun</a>
-    </p>
-    <p>Jika kamu tidak merasa mendaftar, abaikan email ini.</p>
+        </p>
+
+        <p>Jika kamu tidak merasa mendaftar, abaikan email ini.</p>
+    </div>
 </body>
 
 </html>

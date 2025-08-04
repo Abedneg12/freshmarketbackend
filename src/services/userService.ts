@@ -129,7 +129,7 @@ export async function requestEmailUpdateService(
     SECRET_KEY,
     { expiresIn: "1h" }
   );
-  const confirmationLink = `http://localhost:8000/api/user/confirm-email-update?token=${token}`;
+  const confirmationLink = `https://freshmarketbackend.vercel.app/api/user/confirm-email-update?token=${token}`;
   await sendUpdateEmailVerification(newEmail, user.fullName, confirmationLink);
 
   return {
@@ -173,5 +173,24 @@ export async function createPasswordService(userId: number, password: string) {
   await prisma.user.update({
     where: { id: userId },
     data: { password: hashedPassword },
+  });
+}
+
+export async function deleteProfilePictureService(userId: number) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { profilePicture: true },
+  });
+
+  if (!user) throw new Error("User tidak ditemukan.");
+
+  if (user.profilePicture) {
+    await cloudinaryRemove(user.profilePicture);
+  }
+
+  return await prisma.user.update({
+    where: { id: userId },
+    data: { profilePicture: null },
+    select: { id: true, profilePicture: true },
   });
 }
